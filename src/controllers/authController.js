@@ -5,14 +5,33 @@ const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../co
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+const publicUser = (user) => ({
+  id: user._id,
+  nome: user.nome,
+  email: user.email,
+  role: user.role,
+});
+
+const issueTokens = async (user) => {
+  const payload = { sub: user._id.toString(), role: user.role, email: user.email };
+  const accessToken = signAccessToken(payload);
+  const refreshToken = signRefreshToken({ sub: user._id.toString() });
+  user.refreshToken = hashToken(refreshToken);
+  await user.save();
+  return { accessToken, refreshToken };
+};
+
 exports.register = async (req, res, next) => {
   try {
     const { nome, email, senha } = req.body;
     const exists = await User.findOne({ email });
     if (exists) return res.status(409).json({ message: 'Email já cadastrado' });
+
     const hashed = await bcrypt.hash(senha, 12);
-    await User.create({ nome, email, senha: hashed });
-    res.status(201).json({ message: 'Usuário criado com sucesso' });
+    const user = await User.create({ nome, email, senha: hashed });
+    const tokens = await issueTokens(user);
+
+    res.status(201).json({ message: 'Usuário criado com sucesso', user: publicUser(user), ...tokens });
   } catch (e) { next(e); }
 };
 
@@ -21,12 +40,9 @@ exports.login = async (req, res, next) => {
     const { email, senha } = req.body;
     const user = await User.findOne({ email }).select('+refreshToken');
     if (!user || !(await bcrypt.compare(senha, user.senha))) return res.status(401).json({ message: 'Credenciais inválidas' });
-    const payload = { sub: user._id, role: user.role, email: user.email };
-    const accessToken = signAccessToken(payload);
-    const refreshToken = signRefreshToken({ sub: user._id });
-    user.refreshToken = hashToken(refreshToken);
-    await user.save();
-    res.json({ accessToken, refreshToken });
+
+    const tokens = await issueTokens(user);
+    res.json({ user: publicUser(user), ...tokens });
   } catch (e) { next(e); }
 };
 
@@ -36,11 +52,9 @@ exports.refresh = async (req, res, next) => {
     const decoded = verifyRefreshToken(refreshToken);
     const user = await User.findById(decoded.sub).select('+refreshToken');
     if (!user || user.refreshToken !== hashToken(refreshToken)) return res.status(401).json({ message: 'Refresh token inválido' });
-    const accessToken = signAccessToken({ sub: user._id, role: user.role, email: user.email });
-    const newRefreshToken = signRefreshToken({ sub: user._id });
-    user.refreshToken = hashToken(newRefreshToken);
-    await user.save();
-    res.json({ accessToken, refreshToken: newRefreshToken });
+
+    const tokens = await issueTokens(user);
+    res.json({ user: publicUser(user), ...tokens });
   } catch (e) { next(e); }
 };
 

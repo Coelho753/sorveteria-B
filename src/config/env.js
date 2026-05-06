@@ -18,12 +18,18 @@ const env = {
   jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '15m'),
   jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '7d'),
   corsOrigin: readEnv(['CORS_ORIGIN'], '*'),
+  googleClientId: readEnv(['GOOGLE_CLIENT_ID']),
+  googleClientSecret: readEnv(['GOOGLE_CLIENT_SECRET']),
+  googleCallbackUrl: readEnv(['GOOGLE_CALLBACK_URL']),
 };
 
 const requiredVariables = [
   ['mongoUri', 'MONGO_URI ou MONGODB_URI'],
   ['jwtAccessSecret', 'JWT_ACCESS_SECRET, JWT_SECRET, ACCESS_TOKEN_SECRET, JWT_SECRET_KEY ou SECRET_KEY'],
   ['jwtRefreshSecret', 'JWT_REFRESH_SECRET, REFRESH_TOKEN_SECRET ou JWT_REFRESH_TOKEN_SECRET'],
+  ['googleClientId', 'GOOGLE_CLIENT_ID'],
+  ['googleClientSecret', 'GOOGLE_CLIENT_SECRET'],
+  ['googleCallbackUrl', 'GOOGLE_CALLBACK_URL'],
 ];
 
 const missingVariables = requiredVariables

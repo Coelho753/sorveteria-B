@@ -22,6 +22,9 @@ JWT_REFRESH_SECRET=uma_chave_forte_para_refresh_token
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 CORS_ORIGIN=https://seu-frontend.com
+GOOGLE_CLIENT_ID=seu_google_client_id
+GOOGLE_CLIENT_SECRET=seu_google_client_secret
+GOOGLE_CALLBACK_URL=https://sua-api.onrender.com/auth/google/callback
 ```
 
 Para evitar o erro `secretOrPrivateKey must have a value`, o backend também aceita aliases comuns usados em hospedagens:
@@ -36,6 +39,8 @@ Se qualquer segredo obrigatório estiver ausente, a aplicação falha ao iniciar
 - `POST /auth/login` retorna `user`, `accessToken` e `refreshToken`.
 - `POST /auth/refresh` valida e rotaciona o refresh token, retornando um novo par de tokens.
 - `POST /auth/logout` invalida o refresh token persistido.
+- `GET /auth/google?redirect=<url>` inicia login com Google sem sessão persistente.
+- `GET /auth/google/callback` recebe o retorno do Google, busca/cria usuário pelo email e redireciona para `redirect` com `?token=<accessToken>&refresh=<refreshToken>`.
 
 ## CSRF
 Atualmente a API usa tokens JWT no header Authorization (não cookie), reduzindo risco clássico de CSRF. Se migrar para cookie HTTP-only, recomenda-se `csurf`, `sameSite=strict/lax` e token anti-CSRF.
@@ -52,13 +57,19 @@ npm run dev
 - `POST /auth/login`
 - `POST /auth/refresh`
 - `POST /auth/logout`
+- `GET /auth/google?redirect=<url>`
+- `GET /auth/google/callback`
 - `GET /users/me`
 - `PUT /users/me`
-- `GET /products/ativos` (público)
-- `GET /products` (admin)
+- `GET /products` (público, lista ativos)
+- `GET /products/ativos` (público, lista ativos)
+- `GET /products/admin/todos` (admin, lista todos)
 - `POST /products` (admin)
 - `PUT /products/:id` (admin)
 - `DELETE /products/:id` (admin)
+- `GET /cart`
+- `PUT /cart`
+- `DELETE /cart`
 - `POST /orders`
 - `GET /orders/me`
 - `GET /orders` (admin)

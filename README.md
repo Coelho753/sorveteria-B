@@ -75,6 +75,23 @@ npm run dev
 - `GET /orders` (admin)
 - `GET /finance?startDate=2026-01-01&endDate=2026-12-31` (admin)
 
+
+## Produtos
+
+`GET /products` é público e retorna somente produtos ativos com campos em inglês para o frontend (`name`, `description`, `price`, `image`, `imageUrl`, `category`, `size`, `stock`, `active`). O backend também aceita os aliases antigos em português (`nome`, `descricao`, `preco`, `imagem`, `categoria`, `tamanho`, `estoque`, `ativo`) em `POST /products` e `PUT /products/:id`.
+
+Categorias válidas: `tub`, `cup`, `popsicle` e `acai`. Também são aceitos aliases como `pote`, `copo`, `picole`, `picolé` e `açaí`, que são normalizados automaticamente.
+
+Para popular os 41 produtos atuais do frontend:
+
+```bash
+DRY_RUN=1 npm run seed:products
+export ADMIN_TOKEN="seu_accessToken_de_admin"
+npm run seed:products
+```
+
+Veja mais detalhes em `PRODUTOS_BACKEND.md`.
+
 ## Deploy no Render
 - Criar Web Service Node
 - Build command: `npm install`

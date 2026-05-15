@@ -66,3 +66,63 @@ export ADMIN_TOKEN="seu_accessToken_de_admin"
 export API_URL="https://sorveteria-b.onrender.com"
 npm run seed:products
 ```
+
+## 6. Admin, usuários e fidelidade
+
+Campos adicionados em `users` para o Clube Ayla:
+
+```json
+{
+  "telefone": "(11) 99999-9999",
+  "phone": "(11) 99999-9999",
+  "loyaltyStamps": 4,
+  "loyaltyCredits": 1
+}
+```
+
+Endpoints administrativos:
+
+- `GET /users` — admin, lista usuários. Aceita `?search=` para buscar por nome, email ou telefone.
+- `PUT /users/:id` — admin, edita usuário com `name`, `nome`, `phone`, `telefone`, `role`, `address`, `endereco`, `loyaltyStamps`, `loyaltyCredits`.
+- `GET /orders?userId=<id>` — admin, lista pedidos de um usuário específico.
+- `PUT /orders/:id` — admin, altera status do pedido.
+
+Status aceitos no pedido:
+
+- `pendente`
+- `preparando`
+- `saiu_entrega`
+- `entregue`
+- `cancelado`
+- `concluido`
+
+## 7. Regras do Clube Ayla
+
+Campos adicionados em `orders`:
+
+```json
+{
+  "loyaltyCreditsUsed": 1,
+  "loyaltyStampsEarned": 2,
+  "loyaltyApplied": false,
+  "loyaltyReversed": false
+}
+```
+
+Fluxo implementado:
+
+1. `POST /orders` aceita `loyaltyCreditsUsed` e valida se o usuário tem créditos suficientes.
+2. Ao criar o pedido, os créditos usados são debitados do usuário.
+3. `PUT /orders/:id` com status `entregue` ou `concluido` aplica os selos (`loyaltyStampsEarned`) uma única vez.
+4. A cada 10 selos, o backend converte automaticamente em 1 crédito de fidelidade.
+5. `PUT /orders/:id` com status `cancelado` reverte selos aplicados e devolve créditos usados no pedido.
+
+## 8. Criar admin Ayla com segurança
+
+Não armazene senha em texto plano no repositório. Para criar/promover `ayla@admin.com`, execute no ambiente seguro do Render:
+
+```bash
+ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admin
+```
+
+O script cria ou atualiza o usuário com `role: "admin"` e salva a senha com hash bcrypt.

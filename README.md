@@ -92,6 +92,25 @@ npm run seed:products
 
 Veja mais detalhes em `PRODUTOS_BACKEND.md`.
 
+
+## Administração, fidelidade e financeiro
+
+O backend expõe endpoints para o painel administrativo do frontend:
+
+- `GET /users` lista usuários para admins e aceita `?search=`.
+- `PUT /users/:id` permite editar `name`, `phone`, `role`, `address`, `loyaltyStamps` e `loyaltyCredits`.
+- `GET /orders?userId=<id>` filtra pedidos por usuário.
+- `PUT /orders/:id` atualiza status e dispara a lógica do Clube Ayla.
+- `GET /finance?period=7d` retorna KPIs, série diária (`vendasPorDia`/`salesByDay`) e produtos mais vendidos.
+
+O Clube Ayla usa `loyaltyStamps` e `loyaltyCredits` no usuário. Pedidos aceitam `loyaltyCreditsUsed` e armazenam `loyaltyStampsEarned`; quando o status muda para `entregue`/`concluido`, os selos são aplicados e convertidos em crédito a cada 10 selos. Cancelamentos revertem selos e devolvem créditos usados.
+
+Para criar/promover o admin com segurança no Render:
+
+```bash
+ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admin
+```
+
 ## Deploy no Render
 - Criar Web Service Node
 - Build command: `npm install`

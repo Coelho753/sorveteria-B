@@ -1,5 +1,7 @@
 const { body } = require('express-validator');
 
+const validStatuses = ['pendente', 'preparando', 'saiu_entrega', 'entregue', 'cancelado', 'concluido', 'concluído'];
+
 exports.createOrderValidator = [
   body().custom((value) => {
     const items = value.items || value.itens;
@@ -28,6 +30,12 @@ exports.createOrderValidator = [
   body('itens.*.quantidade').optional().isInt({ min: 1 }),
   body('total').optional().isFloat({ min: 0 }),
   body('valorTotal').optional().isFloat({ min: 0 }),
+  body('loyaltyCreditsUsed').optional().isInt({ min: 0 }),
+  body('loyaltyStampsEarned').optional().isInt({ min: 0 }),
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
+];
+
+exports.updateOrderStatusValidator = [
+  body('status').isIn(validStatuses),
 ];

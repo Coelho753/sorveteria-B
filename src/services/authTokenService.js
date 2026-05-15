@@ -6,10 +6,16 @@ const hashToken = (token) => crypto.createHash('sha256').update(token).digest('h
 const publicUser = (user) => ({
   id: user._id,
   nome: user.nome,
+  name: user.nome,
   sobrenome: user.sobrenome,
+  telefone: user.telefone,
+  phone: user.telefone,
   email: user.email,
   googleId: user.googleId,
   endereco: user.endereco,
+  address: user.endereco,
+  loyaltyStamps: user.loyaltyStamps || 0,
+  loyaltyCredits: user.loyaltyCredits || 0,
   role: user.role,
 });
 

@@ -1,0 +1,61 @@
+const mongoose = require('mongoose');
+
+const itemSchema = new mongoose.Schema(
+  {
+    produtoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    nome: { type: String, required: true },
+    quantidade: { type: Number, required: true, min: 1 },
+    preco: { type: Number, required: true, min: 0 },
+    imagem: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+const addressSchema = new mongoose.Schema(
+  {
+    cep: { type: String, trim: true, default: '' },
+    rua: { type: String, trim: true, default: '' },
+    numero: { type: String, trim: true, default: '' },
+    complemento: { type: String, trim: true, default: '' },
+    bairro: { type: String, trim: true, default: '' },
+    cidade: { type: String, trim: true, default: '' },
+    estado: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
+const orderSchema = new mongoose.Schema(
+  {
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    itens: { type: [itemSchema], required: true },
+    valorTotal: { type: Number, required: true, min: 0 },
+    endereco: { type: addressSchema, default: () => ({}) },
+    loyaltyCreditsUsed: { type: Number, min: 0, default: 0 },
+    loyaltyStampsEarned: { type: Number, min: 0, default: 0 },
+    loyaltyApplied: { type: Boolean, default: false },
+    loyaltyReversed: { type: Boolean, default: false },
+    status: { type: String, enum: ['pendente', 'preparando', 'saiu_entrega', 'entregue', 'cancelado', 'concluido'], default: 'pendente' },
+    data: { type: Date, default: Date.now },
+  },
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+orderSchema.virtual('userId').get(function getUserId() { return this.usuario; });
+orderSchema.virtual('items').get(function getItems() {
+  return this.itens.map((item) => ({
+    id: item.produtoId,
+    productId: item.produtoId,
+    name: item.nome,
+    quantity: item.quantidade,
+    price: item.preco,
+    image: item.imagem,
+  }));
+});
+orderSchema.virtual('total').get(function getTotal() { return this.valorTotal; });
+orderSchema.virtual('address').get(function getAddress() { return this.endereco; });
+orderSchema.virtual('createdAtAlias').get(function getCreatedAtAlias() { return this.data; });
+
+module.exports = mongoose.model('Order', orderSchema);

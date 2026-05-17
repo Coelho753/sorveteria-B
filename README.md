@@ -111,6 +111,33 @@ Para criar/promover o admin com segurança no Render:
 ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admin
 ```
 
+
+## WhatsApp e imagens de produtos
+
+Produtos aceitam `image`, `imageUrl` ou `imagem` como URL pública opcional. Se o campo vier vazio, o frontend usa fallback local por nome/categoria.
+
+Para receber pedidos de WhatsApp por integradores como Z-API, Twilio, WhatsApp Cloud API ou n8n:
+
+```http
+POST /orders/whatsapp
+x-webhook-secret: <WHATSAPP_WEBHOOK_SECRET>
+```
+
+Body mínimo:
+
+```json
+{
+  "customerName": "Cliente",
+  "customerPhone": "5511965474023",
+  "source": "whatsapp",
+  "status": "pendente",
+  "items": [{ "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "tub" }],
+  "total": 35
+}
+```
+
+O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro também aceita `source`, por exemplo `GET /finance?source=whatsapp&period=7d`.
+
 ## Deploy no Render
 - Criar Web Service Node
 - Build command: `npm install`

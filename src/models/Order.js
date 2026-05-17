@@ -7,6 +7,7 @@ const itemSchema = new mongoose.Schema(
     quantidade: { type: Number, required: true, min: 1 },
     preco: { type: Number, required: true, min: 0 },
     imagem: { type: String, default: '' },
+    categoria: { type: String, trim: true, default: '' },
   },
   { _id: false }
 );
@@ -26,7 +27,10 @@ const addressSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
-    usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    customerName: { type: String, trim: true, default: '' },
+    customerPhone: { type: String, trim: true, default: '' },
+    source: { type: String, enum: ['site', 'whatsapp', 'admin'], default: 'site' },
     itens: { type: [itemSchema], required: true },
     valorTotal: { type: Number, required: true, min: 0 },
     endereco: { type: addressSchema, default: () => ({}) },
@@ -52,6 +56,7 @@ orderSchema.virtual('items').get(function getItems() {
     quantity: item.quantidade,
     price: item.preco,
     image: item.imagem,
+    category: item.categoria,
   }));
 });
 orderSchema.virtual('total').get(function getTotal() { return this.valorTotal; });

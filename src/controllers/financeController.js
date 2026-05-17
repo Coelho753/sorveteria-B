@@ -28,6 +28,7 @@ exports.summary = async (req, res, next) => {
     const dateRange = buildDateRange(req.query);
     const match = { status: { $ne: 'cancelado' } };
     if (dateRange) match.data = dateRange;
+    if (req.query.source) match.source = req.query.source;
 
     const [totals] = await Order.aggregate([
       { $match: match },

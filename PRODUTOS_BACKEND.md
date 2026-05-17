@@ -126,3 +126,50 @@ ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admi
 ```
 
 O script cria ou atualiza o usuário com `role: "admin"` e salva a senha com hash bcrypt.
+
+## 9. Imagens de produtos e pedidos do WhatsApp
+
+### Imagens de produtos
+
+O campo `image`/`imageUrl` continua opcional em `POST /products` e `PUT /products/:id`.
+Quando o backend não receber imagem, ele salva `imagem: ""`; o frontend usa fallback local pelo nome/categoria.
+Quando houver upload público (Cloudinary, S3, Render Disk ou CDN), envie a URL pública em `image`, `imageUrl` ou `imagem`.
+
+### Pedido público via WhatsApp
+
+Endpoint público para integradores/bots de WhatsApp:
+
+```http
+POST /orders/whatsapp
+x-webhook-secret: <WHATSAPP_WEBHOOK_SECRET>
+Content-Type: application/json
+```
+
+Body aceito:
+
+```json
+{
+  "customerName": "Maria",
+  "customerPhone": "5511965474023",
+  "source": "whatsapp",
+  "status": "pendente",
+  "items": [
+    { "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "tub" }
+  ],
+  "total": 35
+}
+```
+
+O backend salva `source: "whatsapp"`, `customerName`, `customerPhone`, itens, total e status. Configure a variável `WHATSAPP_WEBHOOK_SECRET` no Render e use o mesmo valor no integrador (Z-API, Twilio, WhatsApp Cloud API ou n8n).
+
+### Filtros para admin
+
+- `GET /orders?source=whatsapp` lista somente pedidos vindos do WhatsApp.
+- `GET /orders?source=site` lista pedidos do site.
+- `GET /orders?userId=<id>` lista pedidos de um usuário.
+- `GET /finance?source=whatsapp&period=7d` calcula KPIs apenas de pedidos do WhatsApp.
+
+### Fidelidade: 1 selo por pote
+
+A pontuação padrão agora considera somente itens com categoria `tub`/`pote`.
+Cada unidade de pote gera 1 selo quando o admin muda o status para `entregue` ou `concluido` via `PUT /orders/:id`.

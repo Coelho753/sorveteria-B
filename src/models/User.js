@@ -22,16 +22,10 @@ const userSchema = new mongoose.Schema(
     senha: { type: String, select: false },
     googleId: { type: String, unique: true, sparse: true, default: undefined },
     endereco: { type: enderecoSchema, default: () => ({}) },
-    loyaltyStamps: { type: Number, min: 0, default: 0 },
-    loyaltyCredits: { type: Number, min: 0, default: 0 },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     refreshToken: { type: String, default: null, select: false },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 userSchema.virtual('name').get(function getName() { return this.nome; }).set(function setName(value) { this.nome = value; });

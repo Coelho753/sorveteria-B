@@ -14,8 +14,6 @@ const publicUser = (user) => ({
   googleId: user.googleId,
   endereco: user.endereco,
   address: user.endereco,
-  loyaltyStamps: user.loyaltyStamps || 0,
-  loyaltyCredits: user.loyaltyCredits || 0,
   role: user.role,
 });
 

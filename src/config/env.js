@@ -22,6 +22,9 @@ const env = {
   googleClientSecret: readEnv(['GOOGLE_CLIENT_SECRET']),
   googleCallbackUrl: readEnv(['GOOGLE_CALLBACK_URL']),
   whatsappWebhookSecret: readEnv(['WHATSAPP_WEBHOOK_SECRET']),
+  whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511965474023'),
+  storeAddress: readEnv(['STORE_ADDRESS', 'PUBLIC_ADDRESS'], ''),
+  storeHours: readEnv(['STORE_HOURS', 'PUBLIC_HOURS'], ''),
 };
 
 const requiredVariables = [

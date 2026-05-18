@@ -67,23 +67,12 @@ export API_URL="https://sorveteria-b.onrender.com"
 npm run seed:products
 ```
 
-## 6. Admin, usuários e fidelidade
-
-Campos adicionados em `users` para o Clube Ayla:
-
-```json
-{
-  "telefone": "(11) 99999-9999",
-  "phone": "(11) 99999-9999",
-  "loyaltyStamps": 4,
-  "loyaltyCredits": 1
-}
-```
+## 6. Admin, usuários e atacado
 
 Endpoints administrativos:
 
 - `GET /users` — admin, lista usuários. Aceita `?search=` para buscar por nome, email ou telefone.
-- `PUT /users/:id` — admin, edita usuário com `name`, `nome`, `phone`, `telefone`, `role`, `address`, `endereco`, `loyaltyStamps`, `loyaltyCredits`.
+- `PUT /users/:id` — admin, edita usuário com `name`, `nome`, `phone`, `telefone`, `role`, `address`, `endereco`.
 - `GET /orders?userId=<id>` — admin, lista pedidos de um usuário específico.
 - `PUT /orders/:id` — admin, altera status do pedido.
 
@@ -96,26 +85,30 @@ Status aceitos no pedido:
 - `cancelado`
 - `concluido`
 
-## 7. Regras do Clube Ayla
+## 7. Preços de atacado
 
-Campos adicionados em `orders`:
+Campos e coleções:
 
-```json
-{
-  "loyaltyCreditsUsed": 1,
-  "loyaltyStampsEarned": 2,
-  "loyaltyApplied": false,
-  "loyaltyReversed": false
-}
-```
+- `products.wholesalePrice` — preço de atacado opcional por produto. Também é exposto como `wholesale_price`.
+- `wholesale_category_prices` — preço por categoria (`tub`, `cup`, `popsicle`).
+- `wholesale_configs` — configuração global com `threshold` e `defaultDiscount`.
 
-Fluxo implementado:
+Endpoints admin:
 
-1. `POST /orders` aceita `loyaltyCreditsUsed` e valida se o usuário tem créditos suficientes.
-2. Ao criar o pedido, os créditos usados são debitados do usuário.
-3. `PUT /orders/:id` com status `entregue` ou `concluido` aplica os selos (`loyaltyStampsEarned`) uma única vez.
-4. A cada 10 selos, o backend converte automaticamente em 1 crédito de fidelidade.
-5. `PUT /orders/:id` com status `cancelado` reverte selos aplicados e devolve créditos usados no pedido.
+- `GET /wholesale` → `{ categories, products, threshold, defaultDiscount }`
+- `PUT /wholesale/category` body `{ category, price }`
+- `PUT /wholesale/product` body `{ productId, price }`
+- `DELETE /wholesale/category/:cat`
+- `DELETE /wholesale/product/:id`
+- `GET /wholesale/config`
+- `PUT /wholesale/config` body `{ threshold, defaultDiscount }`
+
+Regra do pedido:
+
+1. O backend conta quantidade por categoria.
+2. Se `count(category) >= threshold`, aplica preço de atacado.
+3. Prioridade: `wholesalePrice` do produto → preço da categoria → `price * (1 - defaultDiscount)`.
+4. O cliente não define o desconto final; `POST /orders` sempre recalcula `subtotal`, `wholesaleDiscount` e `valorTotal`.
 
 ## 8. Criar admin Ayla com segurança
 
@@ -134,6 +127,21 @@ O script cria ou atualiza o usuário com `role: "admin"` e salva a senha com has
 O campo `image`/`imageUrl` continua opcional em `POST /products` e `PUT /products/:id`.
 Quando o backend não receber imagem, ele salva `imagem: ""`; o frontend usa fallback local pelo nome/categoria.
 Quando houver upload público (Cloudinary, S3, Render Disk ou CDN), envie a URL pública em `image`, `imageUrl` ou `imagem`.
+
+
+### Configuração pública
+
+`GET /config/public` retorna:
+
+```json
+{
+  "whatsapp": "5511965474023",
+  "address": "Rua exemplo, 123",
+  "hours": "Seg a Dom, 10h às 22h"
+}
+```
+
+Esses valores vêm de `WHATSAPP_PHONE`, `STORE_ADDRESS` e `STORE_HOURS`.
 
 ### Pedido público via WhatsApp
 
@@ -169,7 +177,3 @@ O backend salva `source: "whatsapp"`, `customerName`, `customerPhone`, itens, to
 - `GET /orders?userId=<id>` lista pedidos de um usuário.
 - `GET /finance?source=whatsapp&period=7d` calcula KPIs apenas de pedidos do WhatsApp.
 
-### Fidelidade: 1 selo por pote
-
-A pontuação padrão agora considera somente itens com categoria `tub`/`pote`.
-Cada unidade de pote gera 1 selo quando o admin muda o status para `entregue` ou `concluido` via `PUT /orders/:id`.

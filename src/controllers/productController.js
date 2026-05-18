@@ -4,6 +4,7 @@ const normalizeProductInput = (body, withDefaults = false) => ({
   nome: body.nome ?? body.name,
   descricao: body.descricao ?? body.description ?? (withDefaults ? '' : undefined),
   preco: body.preco ?? body.price,
+  wholesalePrice: body.wholesalePrice ?? body.wholesale_price ?? body.wholesale_price_override,
   imagem: body.imagem ?? body.image ?? body.imageUrl ?? (withDefaults ? '' : undefined),
   categoria: body.categoria ?? body.category,
   tamanho: body.tamanho ?? body.size ?? (withDefaults ? '' : undefined),

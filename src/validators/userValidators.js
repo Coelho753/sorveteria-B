@@ -12,6 +12,4 @@ exports.adminUpdateUserValidator = [
   body('role').optional().isIn(['user', 'admin']),
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
-  body('loyaltyStamps').optional().isInt({ min: 0 }),
-  body('loyaltyCredits').optional().isInt({ min: 0 }),
 ];

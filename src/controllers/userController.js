@@ -16,11 +16,7 @@ const applyProfileFields = (user, body, allowAdminFields = false) => {
   if (telefone || phone) user.telefone = telefone || phone;
   if (endereco || address) user.endereco = mergeAddress(user.endereco, endereco || address);
 
-  if (allowAdminFields) {
-    if (body.role) user.role = body.role;
-    if (body.loyaltyStamps !== undefined) user.loyaltyStamps = body.loyaltyStamps;
-    if (body.loyaltyCredits !== undefined) user.loyaltyCredits = body.loyaltyCredits;
-  }
+  if (allowAdminFields && body.role) user.role = body.role;
 };
 
 exports.getMe = async (req, res, next) => {

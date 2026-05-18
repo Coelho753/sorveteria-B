@@ -17,6 +17,8 @@ exports.productValidator = [
   body('descricao').optional().isString().trim(),
   body('price').optional().isFloat({ min: 0 }),
   body('preco').optional().isFloat({ min: 0 }),
+  body('wholesalePrice').optional().isFloat({ min: 0 }),
+  body('wholesale_price').optional().isFloat({ min: 0 }),
   body('image').optional().isString().trim(),
   body('imageUrl').optional().isString().trim(),
   body('imagem').optional().isString().trim(),

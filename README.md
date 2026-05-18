@@ -93,17 +93,26 @@ npm run seed:products
 Veja mais detalhes em `PRODUTOS_BACKEND.md`.
 
 
-## Administração, fidelidade e financeiro
+## Administração, atacado e financeiro
 
 O backend expõe endpoints para o painel administrativo do frontend:
 
 - `GET /users` lista usuários para admins e aceita `?search=`.
-- `PUT /users/:id` permite editar `name`, `phone`, `role`, `address`, `loyaltyStamps` e `loyaltyCredits`.
+- `PUT /users/:id` permite editar `name`, `phone`, `role` e `address`.
 - `GET /orders?userId=<id>` filtra pedidos por usuário.
-- `PUT /orders/:id` atualiza status e dispara a lógica do Clube Ayla.
+- `PUT /orders/:id` atualiza status.
 - `GET /finance?period=7d` retorna KPIs, série diária (`vendasPorDia`/`salesByDay`) e produtos mais vendidos.
 
-O Clube Ayla usa `loyaltyStamps` e `loyaltyCredits` no usuário. Pedidos aceitam `loyaltyCreditsUsed` e armazenam `loyaltyStampsEarned`; quando o status muda para `entregue`/`concluido`, os selos são aplicados e convertidos em crédito a cada 10 selos. Cancelamentos revertem selos e devolvem créditos usados.
+Preços de atacado são configurados no backend:
+
+- `GET /wholesale` retorna `{ categories, products, threshold, defaultDiscount }`.
+- `PUT /wholesale/category` configura preço por categoria.
+- `PUT /wholesale/product` configura preço por produto.
+- `DELETE /wholesale/category/:cat` remove preço de categoria.
+- `DELETE /wholesale/product/:id` remove override do produto.
+- `GET /wholesale/config` e `PUT /wholesale/config` configuram `threshold` e `defaultDiscount`.
+
+O backend recalcula o total do pedido em `POST /orders`: quando a quantidade por categoria atinge `threshold`, aplica o preço de atacado do produto, depois da categoria, ou `price * (1 - defaultDiscount)`.
 
 Para criar/promover o admin com segurança no Render:
 
@@ -111,6 +120,10 @@ Para criar/promover o admin com segurança no Render:
 ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admin
 ```
 
+
+Configuração pública para o frontend:
+
+- `GET /config/public` retorna `{ whatsapp, address, hours }` usando `WHATSAPP_PHONE`, `STORE_ADDRESS` e `STORE_HOURS`.
 
 ## WhatsApp e imagens de produtos
 

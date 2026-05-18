@@ -31,6 +31,8 @@ app.use('/products', require('./routes/productRoutes'));
 app.use('/orders', require('./routes/orderRoutes'));
 app.use('/cart', require('./routes/cartRoutes'));
 app.use('/finance', require('./routes/financeRoutes'));
+app.use('/wholesale', require('./routes/wholesaleRoutes'));
+app.use('/config', require('./routes/configRoutes'));
 
 app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada' }));
 app.use(errorMiddleware);

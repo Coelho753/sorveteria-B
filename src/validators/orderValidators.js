@@ -15,7 +15,6 @@ const itemsPayloadValidator = body().custom((value) => {
     if (!productId && (!name || price === undefined)) throw new Error('Cada item precisa de productId/id ou name/nome e price/preco');
     if (!quantity) throw new Error('Cada item precisa de quantity/quantidade');
   }
-
   return true;
 });
 
@@ -34,15 +33,11 @@ const commonOrderValidators = [
   body('itens.*.categoria').optional().isString().trim(),
   body('total').optional().isFloat({ min: 0 }),
   body('valorTotal').optional().isFloat({ min: 0 }),
-  body('loyaltyStampsEarned').optional().isInt({ min: 0 }),
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
 ];
 
-exports.createOrderValidator = [
-  ...commonOrderValidators,
-  body('loyaltyCreditsUsed').optional().isInt({ min: 0 }),
-];
+exports.createOrderValidator = commonOrderValidators;
 
 exports.createWhatsappOrderValidator = [
   ...commonOrderValidators,
@@ -54,6 +49,4 @@ exports.createWhatsappOrderValidator = [
   body('status').optional().isIn(validStatuses),
 ];
 
-exports.updateOrderStatusValidator = [
-  body('status').isIn(validStatuses),
-];
+exports.updateOrderStatusValidator = [body('status').isIn(validStatuses)];

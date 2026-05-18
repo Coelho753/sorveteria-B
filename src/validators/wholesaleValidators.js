@@ -13,4 +13,5 @@ exports.productPriceValidator = [
 exports.configValidator = [
   body('threshold').optional().isInt({ min: 1 }),
   body('defaultDiscount').optional().isFloat({ min: 0, max: 1 }),
+  body('default_discount').optional().isFloat({ min: 0, max: 1 }),
 ];

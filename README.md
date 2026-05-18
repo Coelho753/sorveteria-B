@@ -105,12 +105,12 @@ O backend expõe endpoints para o painel administrativo do frontend:
 
 Preços de atacado são configurados no backend:
 
-- `GET /wholesale` retorna `{ categories, products, threshold, defaultDiscount }`.
+- `GET /wholesale` é público e retorna `{ categories, products, threshold, defaultDiscount, default_discount }`.
 - `PUT /wholesale/category` configura preço por categoria.
 - `PUT /wholesale/product` configura preço por produto.
 - `DELETE /wholesale/category/:cat` remove preço de categoria.
 - `DELETE /wholesale/product/:id` remove override do produto.
-- `GET /wholesale/config` e `PUT /wholesale/config` configuram `threshold` e `defaultDiscount`.
+- `GET /wholesale/config` e `PUT /wholesale/config` configuram `threshold` e `defaultDiscount`/`default_discount`.
 
 O backend recalcula o total do pedido em `POST /orders`: quando a quantidade por categoria atinge `threshold`, aplica o preço de atacado do produto, depois da categoria, ou `price * (1 - defaultDiscount)`.
 
@@ -123,7 +123,7 @@ ADMIN_EMAIL="ayla@admin.com" ADMIN_PASSWORD="senha_forte_aqui" npm run seed:admi
 
 Configuração pública para o frontend:
 
-- `GET /config/public` retorna `{ whatsapp, address, hours }` usando `WHATSAPP_PHONE`, `STORE_ADDRESS` e `STORE_HOURS`.
+- `GET /config/public` retorna `{ whatsappPhone, whatsapp, address, hours }` usando `WHATSAPP_PHONE`, `STORE_ADDRESS` e `STORE_HOURS`.
 
 ## WhatsApp e imagens de produtos
 

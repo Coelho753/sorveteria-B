@@ -5,8 +5,9 @@ const validate = require('../middlewares/validate');
 const c = require('../controllers/wholesaleController');
 const v = require('../validators/wholesaleValidators');
 
-router.use(auth, admin);
 router.get('/', c.summary);
+
+router.use(auth, admin);
 router.put('/category', v.categoryPriceValidator, validate, c.upsertCategory);
 router.put('/product', v.productPriceValidator, validate, c.upsertProduct);
 router.delete('/category/:cat', c.deleteCategory);

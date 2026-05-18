@@ -5,7 +5,7 @@ const wholesaleCategoryPriceSchema = new mongoose.Schema(
     category: { type: String, enum: ['tub', 'cup', 'popsicle'], required: true, unique: true },
     price: { type: Number, required: true, min: 0 },
   },
-  { timestamps: { createdAt: false, updatedAt: 'updated_at' } }
+  { timestamps: { createdAt: false, updatedAt: 'updated_at' }, collection: 'wholesale_category_prices' }
 );
 
 module.exports = mongoose.model('WholesaleCategoryPrice', wholesaleCategoryPriceSchema);

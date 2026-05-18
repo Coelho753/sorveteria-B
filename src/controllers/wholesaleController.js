@@ -23,6 +23,7 @@ const summaryPayload = async () => {
     products: Object.fromEntries(productRows.map((product) => [product._id.toString(), product.wholesalePrice])),
     threshold: config.threshold,
     defaultDiscount: config.defaultDiscount,
+    default_discount: config.defaultDiscount,
   };
 };
 
@@ -73,7 +74,7 @@ exports.deleteProduct = async (req, res, next) => {
 exports.getConfig = async (req, res, next) => {
   try {
     const config = await getConfig();
-    res.json({ threshold: config.threshold, defaultDiscount: config.defaultDiscount });
+    res.json({ threshold: config.threshold, defaultDiscount: config.defaultDiscount, default_discount: config.defaultDiscount });
   } catch (e) { next(e); }
 };
 
@@ -82,7 +83,8 @@ exports.updateConfig = async (req, res, next) => {
     const config = await getConfig();
     if (req.body.threshold !== undefined) config.threshold = req.body.threshold;
     if (req.body.defaultDiscount !== undefined) config.defaultDiscount = req.body.defaultDiscount;
+    if (req.body.default_discount !== undefined) config.defaultDiscount = req.body.default_discount;
     await config.save();
-    res.json({ threshold: config.threshold, defaultDiscount: config.defaultDiscount });
+    res.json({ threshold: config.threshold, defaultDiscount: config.defaultDiscount, default_discount: config.defaultDiscount });
   } catch (e) { next(e); }
 };

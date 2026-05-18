@@ -91,17 +91,17 @@ Campos e coleções:
 
 - `products.wholesalePrice` — preço de atacado opcional por produto. Também é exposto como `wholesale_price`.
 - `wholesale_category_prices` — preço por categoria (`tub`, `cup`, `popsicle`).
-- `wholesale_configs` — configuração global com `threshold` e `defaultDiscount`.
+- `wholesale_configs` — configuração global com `threshold` default `3` e `defaultDiscount` default `0.35`.
 
-Endpoints admin:
+Endpoints:
 
-- `GET /wholesale` → `{ categories, products, threshold, defaultDiscount }`
+- `GET /wholesale` — público → `{ categories, products, threshold, defaultDiscount, default_discount }`
 - `PUT /wholesale/category` body `{ category, price }`
 - `PUT /wholesale/product` body `{ productId, price }`
 - `DELETE /wholesale/category/:cat`
 - `DELETE /wholesale/product/:id`
 - `GET /wholesale/config`
-- `PUT /wholesale/config` body `{ threshold, defaultDiscount }`
+- `PUT /wholesale/config` body `{ threshold, defaultDiscount }` ou `{ threshold, default_discount }`
 
 Regra do pedido:
 
@@ -135,6 +135,7 @@ Quando houver upload público (Cloudinary, S3, Render Disk ou CDN), envie a URL 
 
 ```json
 {
+  "whatsappPhone": "5511965474023",
   "whatsapp": "5511965474023",
   "address": "Rua exemplo, 123",
   "hours": "Seg a Dom, 10h às 22h"

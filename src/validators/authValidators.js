@@ -10,4 +10,4 @@ exports.registerValidator = [
 ];
 
 exports.loginValidator = [body('email').isEmail().normalizeEmail(), body('senha').isString().notEmpty()];
-exports.refreshValidator = [body('refreshToken').optional().isString()];
+exports.refreshValidator = [body('refreshToken').isString().notEmpty()];

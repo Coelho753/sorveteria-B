@@ -9,8 +9,6 @@ const readEnv = (names, fallback = undefined) => {
   return fallback;
 };
 
-const parseOrigins = (value) => value.split(',').map((item) => item.trim()).filter(Boolean);
-
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
@@ -21,12 +19,11 @@ const env = {
   jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '15m'),
   jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '30d'),
   corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-rjuw.onrender.com'),
-  corsAllowlist: parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-rjuw.onrender.com'))),
   googleClientId: readEnv(['GOOGLE_CLIENT_ID']),
   googleClientSecret: readEnv(['GOOGLE_CLIENT_SECRET']),
   googleCallbackUrl: readEnv(['GOOGLE_CALLBACK_URL']),
   whatsappWebhookSecret: readEnv(['WHATSAPP_WEBHOOK_SECRET']),
-  whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511965474023'),
+  whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511911003930'),
   storeAddress: readEnv(['STORE_ADDRESS', 'PUBLIC_ADDRESS'], ''),
   storeHours: readEnv(['STORE_HOURS', 'PUBLIC_HOURS'], ''),
 };

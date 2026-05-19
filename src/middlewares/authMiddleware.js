@@ -1,15 +1,18 @@
 const { verifyAccessToken } = require('../config/jwt');
+const { parseCookies } = require('./cookieUtils');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ message: 'Token ausente' });
+  const cookies = parseCookies(req.headers.cookie);
+  const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+  const token = bearer || cookies.ayla_at;
+
+  if (!token) return res.status(401).json({ message: 'Não autenticado' });
 
   try {
-    const token = authHeader.split(' ')[1];
-    const payload = verifyAccessToken(token);
-    req.user = payload;
+    req.user = verifyAccessToken(token);
     next();
   } catch {
-    res.status(401).json({ message: 'Token inválido ou expirado' });
+    res.status(401).json({ message: 'Não autenticado' });
   }
 };

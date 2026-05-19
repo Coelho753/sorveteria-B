@@ -12,8 +12,26 @@ const errorMiddleware = require('./middlewares/errorMiddleware');
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.corsOrigin, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin || env.corsAllowlist.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS bloqueado'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+}));
+
+app.use(express.json({
+  limit: '32kb',
+  verify: (req, res, buf) => { req.rawBody = buf; },
+  type: ['application/json', 'application/*+json'],
+}));
+
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && !req.is('application/json')) return res.status(415).json({ message: 'Content-Type inválido' });
+  next();
+});
+
 app.use((req, res, next) => {
   req.body = mongoSanitize(req.body);
   req.query = mongoSanitize(req.query);
@@ -22,7 +40,11 @@ app.use((req, res, next) => {
 });
 app.use(xssClean());
 app.use(morgan('dev'));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+app.use('/auth/login', rateLimit({ windowMs: 60 * 1000, max: 5 }));
+app.use('/auth/register', rateLimit({ windowMs: 60 * 60 * 1000, max: 3 }));
+app.use('/auth/refresh', rateLimit({ windowMs: 60 * 1000, max: 30 }));
+app.use('/orders', rateLimit({ windowMs: 60 * 1000, max: 20 }));
 app.use(passport.initialize());
 
 app.use('/auth', require('./routes/authRoutes'));

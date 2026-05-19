@@ -157,3 +157,13 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 - Start command: `npm start`
 - Configurar variáveis de ambiente do `.env.example`
 - Após alterar variáveis, executar Manual Deploy → Clear build cache & deploy
+
+
+## Hardening de segurança
+- Auth por cookie HttpOnly (`ayla_at` e `ayla_rt`) com rotação de refresh token.
+- `Authorization: Bearer` segue aceito por compatibilidade durante migração.
+- Rate limit reforçado em `/auth/login`, `/auth/register`, `/auth/refresh` e `/orders`.
+- CORS com allowlist (`CORS_ALLOWLIST`) e `credentials: true`.
+- Webhook WhatsApp protegido por HMAC SHA-256 no header `x-ayla-signature`.
+- Backend recalcula preço de atacado em `POST /orders` e `POST /orders/whatsapp` (não confia em `price` do cliente).
+- Erros internos retornam mensagem genérica para o cliente.

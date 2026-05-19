@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { publicUser } = require('../services/authTokenService');
+const AdminAudit = require('../models/AdminAudit');
 
 const mergeAddress = (currentAddress, nextAddress) => ({
   ...currentAddress?.toObject?.(),
@@ -29,6 +30,7 @@ exports.getMe = async (req, res, next) => {
 
 exports.updateMe = async (req, res, next) => {
   try {
+    if (req.body.role !== undefined) return res.status(400).json({ message: 'Campo inválido' });
     const { currentPassword, newPassword, senha } = req.body;
     const user = await User.findById(req.user.sub).select('+senha');
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
@@ -65,8 +67,30 @@ exports.updateUser = async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
 
+    if (req.body.role !== undefined) return res.status(400).json({ message: 'Use PATCH /admin/users/:id/role para alterar role' });
     applyProfileFields(user, req.body, true);
     await user.save();
+
+    res.json(publicUser(user));
+  } catch (e) { next(e); }
+};
+
+
+exports.patchRole = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+
+    user.role = req.body.role;
+    await user.save();
+
+    await AdminAudit.create({
+      user_id: req.user.sub,
+      action: 'admin.user.role.patch',
+      payload: { targetUserId: req.params.id, role: req.body.role },
+      ip: req.ip || '',
+      ua: req.headers['user-agent'] || '',
+    });
 
     res.json(publicUser(user));
   } catch (e) { next(e); }

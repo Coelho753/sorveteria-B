@@ -13,3 +13,8 @@ exports.adminUpdateUserValidator = [
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
 ];
+
+
+exports.patchRoleValidator = [
+  body('role').isIn(['user', 'admin']),
+];

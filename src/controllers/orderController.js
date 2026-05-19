@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const env = require('../config/env');
@@ -77,7 +78,11 @@ exports.create = async (req, res, next) => {
 exports.createWhatsapp = async (req, res, next) => {
   try {
     if (!env.whatsappWebhookSecret) return res.status(503).json({ message: 'Webhook WhatsApp não configurado' });
-    if (req.headers['x-webhook-secret'] !== env.whatsappWebhookSecret) return res.status(401).json({ message: 'Webhook secret inválido' });
+    const signature = req.headers['x-ayla-signature'];
+    if (!signature || !req.rawBody) return res.status(401).json({ message: 'Assinatura inválida' });
+    const expected = crypto.createHmac('sha256', env.whatsappWebhookSecret).update(req.rawBody).digest('hex');
+    const valid = signature.length === expected.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    if (!valid) return res.status(401).json({ message: 'Assinatura inválida' });
 
     const { itens, subtotal, valorTotal, wholesaleDiscount } = await buildOrderItems(normalizeRequestItems(req.body));
     const order = await Order.create({

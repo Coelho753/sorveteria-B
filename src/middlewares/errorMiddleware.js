@@ -2,7 +2,9 @@ const { logError } = require('../utils/logger');
 
 const errorMiddleware = (err, req, res, next) => {
   logError(err);
-  res.status(err.statusCode || 500).json({ message: err.message || 'Erro interno do servidor' });
+  const status = err.statusCode || err.status || 500;
+  const safeMessage = err.expose && status < 500 ? err.message : 'Erro interno';
+  res.status(status).json({ message: safeMessage });
 };
 
 module.exports = errorMiddleware;

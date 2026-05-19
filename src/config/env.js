@@ -9,15 +9,19 @@ const readEnv = (names, fallback = undefined) => {
   return fallback;
 };
 
+const parseOrigins = (value) => value.split(',').map((item) => item.trim()).filter(Boolean);
+
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
+  isProd: (process.env.NODE_ENV || 'development') === 'production',
   port: readEnv(['PORT'], 3000),
   mongoUri: readEnv(['MONGO_URI', 'MONGODB_URI']),
   jwtAccessSecret: readEnv(['JWT_ACCESS_SECRET', 'JWT_SECRET', 'ACCESS_TOKEN_SECRET', 'JWT_SECRET_KEY', 'SECRET_KEY']),
   jwtRefreshSecret: readEnv(['JWT_REFRESH_SECRET', 'REFRESH_TOKEN_SECRET', 'JWT_REFRESH_TOKEN_SECRET']),
   jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '15m'),
-  jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '7d'),
-  corsOrigin: readEnv(['CORS_ORIGIN'], '*'),
+  jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '30d'),
+  corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-rjuw.onrender.com'),
+  corsAllowlist: parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-rjuw.onrender.com'))),
   googleClientId: readEnv(['GOOGLE_CLIENT_ID']),
   googleClientSecret: readEnv(['GOOGLE_CLIENT_SECRET']),
   googleCallbackUrl: readEnv(['GOOGLE_CALLBACK_URL']),

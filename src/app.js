@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const passport = require('./config/passport');
 const env = require('./config/env');
 const errorMiddleware = require('./middlewares/errorMiddleware');
+const inputSanitizer = require('./middlewares/inputSanitizer');
 
 const app = express();
 
@@ -15,8 +16,10 @@ app.use(helmet());
 const isAllowedCorsOrigin = (origin) => {
   if (!origin) return true;
   try {
-    const { hostname } = new URL(origin);
-    return env.corsAllowlist.includes(origin) || hostname === 'localhost' || hostname.endsWith('.lovable.app');
+    const { protocol, hostname } = new URL(origin);
+    const isHttpLocalhost = protocol === 'http:' && (hostname === 'localhost' || hostname === '127.0.0.1');
+    const isTrustedHostedApp = protocol === 'https:' && (hostname.endsWith('.onrender.com') || hostname.endsWith('.lovable.app'));
+    return env.corsAllowlist.includes(origin) || isHttpLocalhost || isTrustedHostedApp;
   } catch {
     return false;
   }
@@ -38,10 +41,13 @@ app.use((req, res, next) => {
   req.params = mongoSanitize(req.params);
   next();
 });
+app.use(inputSanitizer);
 app.use(xssClean());
 app.use(morgan('dev'));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(passport.initialize());
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/admin', require('./routes/adminRoutes'));

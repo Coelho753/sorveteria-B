@@ -167,3 +167,11 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 - Webhook WhatsApp protegido por HMAC SHA-256 no header `x-ayla-signature`.
 - Backend recalcula preço de atacado em `POST /orders` e `POST /orders/whatsapp` (não confia em `price` do cliente).
 - Erros internos retornam mensagem genérica para o cliente.
+
+
+## Correções de estabilidade e acesso
+- `src/config/env.js` define `parseOrigins()` antes de montar `CORS_ALLOWLIST`, evitando o erro `ReferenceError: parseOrigins is not defined` na inicialização.
+- CORS permite o frontend atual em Render, localhost e domínios hospedados em `.onrender.com`/`.lovable.app` via HTTPS.
+- Entradas de `body`, `query` e `params` passam por sanitização extra contra chaves Mongo perigosas (`$` e `.`), além de `mongo-sanitize`.
+- Mongoose usa `sanitizeFilter` e `strictQuery` para reduzir risco de NoSQL injection em filtros.
+- `GET /health` retorna `{ "status": "ok" }` para checagem de conexão/deploy.

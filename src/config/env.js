@@ -9,9 +9,17 @@ const readEnv = (names, fallback = undefined) => {
   return fallback;
 };
 
+const parseOrigins = (origins) => {
+  if (!origins) return [];
+  if (Array.isArray(origins)) return origins.map((origin) => origin.trim()).filter(Boolean);
+  return origins.split(',').map((origin) => origin.trim()).filter(Boolean);
+};
+
 const defaultCorsOrigins = [
   'https://ayla-sorvetes-yfbk.onrender.com',
+  'https://ayla-sorvetes-rjuw.onrender.com',
   'http://localhost:5173',
+  'http://localhost:3000',
 ];
 
 const configuredCorsOrigins = parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], defaultCorsOrigins.join(','))));

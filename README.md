@@ -22,6 +22,7 @@ JWT_REFRESH_SECRET=uma_chave_forte_para_refresh_token
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 CORS_ORIGIN=https://seu-frontend.com
+# Opcionais: habilitam login Google se os 3 estiverem definidos
 GOOGLE_CLIENT_ID=seu_google_client_id
 GOOGLE_CLIENT_SECRET=seu_google_client_secret
 GOOGLE_CALLBACK_URL=https://sua-api.onrender.com/auth/google/callback
@@ -32,7 +33,7 @@ Para evitar o erro `secretOrPrivateKey must have a value`, o backend também ace
 - Refresh token: `JWT_REFRESH_SECRET`, `REFRESH_TOKEN_SECRET` ou `JWT_REFRESH_TOKEN_SECRET`
 - MongoDB: `MONGO_URI` ou `MONGODB_URI`
 
-Se qualquer segredo obrigatório estiver ausente, a aplicação falha ao iniciar com uma mensagem clara nos logs do deploy.
+Se MongoDB ou segredos JWT obrigatórios estiverem ausentes, a aplicação falha ao iniciar com uma mensagem clara nos logs do deploy. As variáveis do Google OAuth são opcionais para não derrubar o backend; se faltarem, somente `/auth/google` responde 503 até a configuração ser completada.
 
 ## Autenticação
 - `POST /auth/register` cadastra o usuário e já retorna `user`, `accessToken` e `refreshToken`.
@@ -160,18 +161,21 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 
 
 ## Hardening de segurança
-- Auth por cookie HttpOnly (`ayla_at` e `ayla_rt`) com rotação de refresh token.
-- `Authorization: Bearer` segue aceito por compatibilidade durante migração.
+- JWT access/refresh com rotação de refresh token e armazenamento do refresh como hash no banco.
+- `Authorization: Bearer` é aceito pelo backend para compatibilidade com o frontend atual.
 - Rate limit reforçado em `/auth/login`, `/auth/register`, `/auth/refresh` e `/orders`.
-- CORS com allowlist (`CORS_ALLOWLIST`) e `credentials: true`.
+- CORS com allowlist (`CORS_ALLOWLIST`), suporte ao frontend atual `https://ayla-sorvetes-yfbk.onrender.com`, previews `.lovable.app`, Render e localhost.
 - Webhook WhatsApp protegido por HMAC SHA-256 no header `x-ayla-signature`.
 - Backend recalcula preço de atacado em `POST /orders` e `POST /orders/whatsapp` (não confia em `price` do cliente).
 - Erros internos retornam mensagem genérica para o cliente.
+- Arquivos reais de ambiente e chaves locais são bloqueados por `.gitignore`; apenas `.env.example` com placeholders deve ficar versionado.
 
 
 ## Correções de estabilidade e acesso
 - `src/config/env.js` define `parseOrigins()` antes de montar `CORS_ALLOWLIST`, evitando o erro `ReferenceError: parseOrigins is not defined` na inicialização.
-- CORS permite o frontend atual em Render, localhost e domínios hospedados em `.onrender.com`/`.lovable.app` via HTTPS.
+- CORS permite o frontend atual `https://ayla-sorvetes-yfbk.onrender.com`, localhost e domínios hospedados em `.onrender.com`/`.lovable.app` via HTTPS, com headers `Authorization`, `Content-Type`, `x-ayla-signature` e `x-webhook-secret`.
 - Entradas de `body`, `query` e `params` passam por sanitização extra contra chaves Mongo perigosas (`$` e `.`), além de `mongo-sanitize`.
 - Mongoose usa `sanitizeFilter` e `strictQuery` para reduzir risco de NoSQL injection em filtros.
 - `GET /health` retorna `{ "status": "ok" }` para checagem de conexão/deploy.
+- Logs HTTP registram método, rota sem query string, status e `Origin`, permitindo confirmar no Render se o frontend chegou ao backend sem expor tokens ou dados sensíveis de query.
+- Google OAuth não impede mais a API de subir quando `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` ou `GOOGLE_CALLBACK_URL` estiverem ausentes; nesse caso apenas `/auth/google` fica temporariamente indisponível.

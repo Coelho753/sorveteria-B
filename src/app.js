@@ -31,7 +31,9 @@ app.use(cors({
     return cb(new Error('CORS bloqueado'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-ayla-signature', 'x-webhook-secret'],
+  optionsSuccessStatus: 204,
 }));
 app.use(express.json({ limit: '1mb', verify: (req, res, buf) => { req.rawBody = buf; } }));
 
@@ -43,7 +45,9 @@ app.use((req, res, next) => {
 });
 app.use(inputSanitizer);
 app.use(xssClean());
-app.use(morgan('dev'));
+morgan.token('origin', (req) => req.headers.origin || '-');
+morgan.token('safe-url', (req) => (req.originalUrl || req.url || '').split('?')[0]);
+app.use(morgan(':method :safe-url :status :response-time ms origin=:origin'));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(passport.initialize());
 

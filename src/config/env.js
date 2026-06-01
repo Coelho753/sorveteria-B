@@ -9,6 +9,13 @@ const readEnv = (names, fallback = undefined) => {
   return fallback;
 };
 
+const defaultCorsOrigins = [
+  'https://ayla-sorvetes-yfbk.onrender.com',
+  'http://localhost:5173',
+];
+
+const configuredCorsOrigins = parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], defaultCorsOrigins.join(','))));
+
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
@@ -18,12 +25,13 @@ const env = {
   jwtRefreshSecret: readEnv(['JWT_REFRESH_SECRET', 'REFRESH_TOKEN_SECRET', 'JWT_REFRESH_TOKEN_SECRET']),
   jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '15m'),
   jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '30d'),
-  corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-rjuw.onrender.com'),
+  corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-yfbk.onrender.com'),
+  corsAllowlist: [...new Set([...defaultCorsOrigins, ...configuredCorsOrigins])],
   googleClientId: readEnv(['GOOGLE_CLIENT_ID']),
   googleClientSecret: readEnv(['GOOGLE_CLIENT_SECRET']),
   googleCallbackUrl: readEnv(['GOOGLE_CALLBACK_URL']),
   whatsappWebhookSecret: readEnv(['WHATSAPP_WEBHOOK_SECRET']),
-  whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511911003930'),
+  whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511965474023'),
   storeAddress: readEnv(['STORE_ADDRESS', 'PUBLIC_ADDRESS'], ''),
   storeHours: readEnv(['STORE_HOURS', 'PUBLIC_HOURS'], ''),
 };

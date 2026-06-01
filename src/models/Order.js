@@ -32,7 +32,7 @@ const orderSchema = new mongoose.Schema(
     subtotal: { type: Number, min: 0, default: 0 },
     wholesaleDiscount: { type: Number, min: 0, default: 0 },
     endereco: { type: addressSchema, default: () => ({}) },
-    status: { type: String, enum: ['pendente', 'preparando', 'saiu_entrega', 'entregue', 'cancelado', 'concluido'], default: 'pendente' },
+    status: { type: String, enum: ['novo', 'pendente', 'preparando', 'enviado', 'saiu_entrega', 'entregue', 'cancelado', 'concluido'], default: 'novo' },
     data: { type: Date, default: Date.now },
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } }

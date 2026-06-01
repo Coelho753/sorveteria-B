@@ -117,7 +117,11 @@ exports.listAll = async (req, res, next) => {
 
 exports.updateStatus = async (req, res, next) => {
   try {
-    const order = await Order.findByIdAndUpdate(req.params.id, { $set: { status: normalizeStatus(req.body.status) } }, { new: true, runValidators: true });
+    const update = {};
+    if (req.body.status !== undefined) update.status = normalizeStatus(req.body.status);
+    if (req.body.total !== undefined || req.body.valorTotal !== undefined) update.valorTotal = Number(req.body.total ?? req.body.valorTotal);
+
+    const order = await Order.findByIdAndUpdate(req.params.id, { $set: update }, { new: true, runValidators: true });
     if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
     res.json(order);
   } catch (e) { next(e); }

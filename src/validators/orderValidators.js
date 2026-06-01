@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 
-const validStatuses = ['pendente', 'preparando', 'saiu_entrega', 'entregue', 'cancelado', 'concluido', 'concluído'];
+const validStatuses = ['novo', 'pendente', 'preparando', 'enviado', 'saiu_entrega', 'entregue', 'cancelado', 'concluido', 'concluído'];
 
 const itemsPayloadValidator = body().custom((value) => {
   const items = value.items || value.itens;
@@ -49,4 +49,12 @@ exports.createWhatsappOrderValidator = [
   body('status').optional().isIn(validStatuses),
 ];
 
-exports.updateOrderStatusValidator = [body('status').isIn(validStatuses)];
+exports.updateOrderStatusValidator = [
+  body().custom((value) => {
+    if (value.status === undefined && value.total === undefined && value.valorTotal === undefined) throw new Error('Informe status ou total');
+    return true;
+  }),
+  body('status').optional().isIn(validStatuses),
+  body('total').optional().isFloat({ min: 0 }),
+  body('valorTotal').optional().isFloat({ min: 0 }),
+];

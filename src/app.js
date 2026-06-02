@@ -5,7 +5,6 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('mongo-sanitize');
 const xssClean = require('xss-clean');
 const morgan = require('morgan');
-const passport = require('./config/passport');
 const env = require('./config/env');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const inputSanitizer = require('./middlewares/inputSanitizer');
@@ -49,19 +48,23 @@ morgan.token('origin', (req) => req.headers.origin || '-');
 morgan.token('safe-url', (req) => (req.originalUrl || req.url || '').split('?')[0]);
 app.use(morgan(':method :safe-url :status :response-time ms origin=:origin'));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
-app.use(passport.initialize());
-
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.use('/auth', require('./routes/authRoutes'));
-app.use('/admin', require('./routes/adminRoutes'));
-app.use('/users', require('./routes/userRoutes'));
-app.use('/products', require('./routes/productRoutes'));
-app.use('/orders', require('./routes/orderRoutes'));
-app.use('/cart', require('./routes/cartRoutes'));
-app.use('/finance', require('./routes/financeRoutes'));
-app.use('/wholesale', require('./routes/wholesaleRoutes'));
-app.use('/config', require('./routes/configRoutes'));
+const mountRoutes = (basePath = '') => {
+  app.use(`${basePath}/auth`, require('./routes/authRoutes'));
+  app.use(`${basePath}/admin`, require('./routes/adminRoutes'));
+  app.use(`${basePath}/users`, require('./routes/userRoutes'));
+  app.use(`${basePath}/products`, require('./routes/productRoutes'));
+  app.use(`${basePath}/orders`, require('./routes/orderRoutes'));
+  app.use(`${basePath}/cart`, require('./routes/cartRoutes'));
+  app.use(`${basePath}/finance`, require('./routes/financeRoutes'));
+  app.use(`${basePath}/wholesale`, require('./routes/wholesaleRoutes'));
+  app.use(`${basePath}/config`, require('./routes/configRoutes'));
+};
+
+mountRoutes();
+mountRoutes('/api');
 
 app.use((req, res) => res.status(404).json({ message: 'Rota não encontrada' }));
 app.use(errorMiddleware);

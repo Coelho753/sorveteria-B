@@ -37,6 +37,7 @@ Se MongoDB ou segredos JWT obrigatórios estiverem ausentes, a aplicação falha
 - `POST /auth/login` retorna `user`, `accessToken` e `refreshToken`.
 - `POST /auth/refresh` valida e rotaciona o refresh token, retornando um novo par de tokens.
 - `POST /auth/logout` invalida o refresh token persistido.
+- Senhas devem ter no mínimo 10 caracteres, com maiúscula, minúscula, número e símbolo.
 
 ## CSRF
 Atualmente a API usa tokens JWT no header Authorization (não cookie), reduzindo risco clássico de CSRF. Se migrar para cookie HTTP-only, recomenda-se `csurf`, `sameSite=strict/lax` e token anti-CSRF.
@@ -57,6 +58,8 @@ As rotas estão disponíveis tanto sem prefixo quanto com `/api` para evitar 404
 - `POST /auth/logout`
 - `GET /users/me`
 - `PUT /users/me`
+- `PUT /users/:id` (admin; aceita `name`/`nome`, `phone`/`telefone`, `address`/`endereco`, `role`, `email` e `password`/`senha`)
+- `DELETE /users/:id` (admin)
 - `GET /products` (público, lista ativos)
 - `GET /products/ativos` (público, lista ativos)
 - `GET /products/admin/todos` (admin, lista todos)
@@ -69,6 +72,8 @@ As rotas estão disponíveis tanto sem prefixo quanto com `/api` para evitar 404
 - `POST /orders`
 - `GET /orders/me`
 - `GET /orders` (admin)
+- `PUT /orders/:id` (admin)
+- `DELETE /orders/:id` (admin)
 - `GET /finance?startDate=2026-01-01&endDate=2026-12-31` (admin)
 
 
@@ -94,9 +99,11 @@ Veja mais detalhes em `PRODUTOS_BACKEND.md`.
 O backend expõe endpoints para o painel administrativo do frontend:
 
 - `GET /users` lista usuários para admins e aceita `?search=`.
-- `PUT /users/:id` permite editar `name`, `phone`, `role` e `address`.
+- `PUT /users/:id` permite editar `name`, `phone`, `role`, `email`, `password`/`senha` e `address`.
+- `DELETE /users/:id` remove usuários para admins e desvincula pedidos antigos.
 - `GET /orders?userId=<id>` filtra pedidos por usuário.
 - `PUT /orders/:id` atualiza status.
+- `DELETE /orders/:id` remove pedidos para admins.
 - `GET /finance?period=7d` retorna KPIs, série diária (`vendasPorDia`/`salesByDay`) e produtos mais vendidos.
 
 Preços de atacado são configurados no backend:
@@ -175,3 +182,4 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 - Logs HTTP registram método, rota sem query string, status e `Origin`, permitindo confirmar no Render se o frontend chegou ao backend sem expor tokens ou dados sensíveis de query.
 - Rotas duplicadas com prefixo `/api` reduzem falhas 404 quando o frontend está configurado com `VITE_API_URL`, `API_URL` ou proxy apontando para `/api`.
 - Login externo via Google OAuth foi removido; a autenticação suportada é por email/senha com JWT.
+- Admins podem remover usuários e pedidos com `DELETE /users/:id` e `DELETE /orders/:id`, além de redefinir `email` e `password`/`senha` em `PUT /users/:id`.

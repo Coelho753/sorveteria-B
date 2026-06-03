@@ -126,3 +126,11 @@ exports.updateStatus = async (req, res, next) => {
     res.json(order);
   } catch (e) { next(e); }
 };
+
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+};

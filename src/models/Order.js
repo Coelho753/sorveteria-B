@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const ORDER_STATUSES = ['pendente', 'pago', 'cancelado', 'separando', 'saiu_para_entrega', 'entregue', 'novo', 'preparando', 'enviado', 'saiu_entrega', 'concluido'];
+
 const itemSchema = new mongoose.Schema(
   {
     produtoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
@@ -32,13 +34,26 @@ const orderSchema = new mongoose.Schema(
     subtotal: { type: Number, min: 0, default: 0 },
     wholesaleDiscount: { type: Number, min: 0, default: 0 },
     endereco: { type: addressSchema, default: () => ({}) },
-    status: { type: String, enum: ['novo', 'pendente', 'preparando', 'enviado', 'saiu_entrega', 'entregue', 'cancelado', 'concluido'], default: 'novo' },
+    status: { type: String, enum: ORDER_STATUSES, default: 'pendente' },
     data: { type: Date, default: Date.now },
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 orderSchema.virtual('userId').get(function getUserId() { return this.usuario; });
+orderSchema.virtual('user').get(function getUser() {
+  if (!this.populated('usuario') || !this.usuario) return undefined;
+  const name = [this.usuario.nome, this.usuario.sobrenome].filter(Boolean).join(' ').trim() || this.usuario.nome || '';
+  return {
+    id: this.usuario._id,
+    name,
+    nome: this.usuario.nome,
+    sobrenome: this.usuario.sobrenome,
+    email: this.usuario.email,
+    phone: this.usuario.telefone,
+    telefone: this.usuario.telefone,
+  };
+});
 orderSchema.virtual('items').get(function getItems() {
   return this.itens.map((item) => ({
     id: item.produtoId, productId: item.produtoId, name: item.nome, quantity: item.quantidade, price: item.preco, originalPrice: item.originalPrice, wholesaleApplied: item.wholesaleApplied, image: item.imagem, category: item.categoria,
@@ -49,3 +64,4 @@ orderSchema.virtual('address').get(function getAddress() { return this.endereco;
 orderSchema.virtual('createdAtAlias').get(function getCreatedAtAlias() { return this.data; });
 
 module.exports = mongoose.model('Order', orderSchema);
+module.exports.ORDER_STATUSES = ORDER_STATUSES;

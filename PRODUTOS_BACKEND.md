@@ -35,9 +35,14 @@ O `POST /products` e o `PUT /products/:id` aceitam estes campos:
 
 Categorias válidas:
 
-- `tub` (`pote` também é aceito e normalizado para `tub`)
+- `pote`
+- `tub` (legado)
 - `cup` (`copo` também é aceito e normalizado para `cup`)
-- `popsicle` (`picole`/`picolé` também são aceitos e normalizados para `popsicle`)
+- `pic_agua`
+- `pic_leite`
+- `pic_premium`
+- `pic_ski`
+- `popsicle` (legado; `picole`/`picolé` também são aceitos e normalizados para `popsicle`)
 - `acai` (`açaí` também é aceito e normalizado para `acai`)
 
 ## Endpoints
@@ -72,25 +77,32 @@ npm run seed:products
 Endpoints administrativos:
 
 - `GET /users` — admin, lista usuários. Aceita `?search=` para buscar por nome, email ou telefone.
-- `PUT /users/:id` — admin, edita usuário com `name`, `nome`, `phone`, `telefone`, `role`, `address`, `endereco`.
+- `PUT /users/:id` — admin, edita usuário com `name`, `nome`, `phone`, `telefone`, `role`, `email`, `password`, `senha`, `address`, `endereco`.
+- `DELETE /users/:id` — admin, remove usuário e desvincula pedidos antigos.
 - `GET /orders?userId=<id>` — admin, lista pedidos de um usuário específico.
 - `PUT /orders/:id` — admin, altera status do pedido.
+- `DELETE /orders/:id` — admin, remove pedido.
 
 Status aceitos no pedido:
 
 - `pendente`
-- `preparando`
-- `saiu_entrega`
+- `pago`
+- `separando`
+- `saiu_para_entrega`
 - `entregue`
 - `cancelado`
-- `concluido`
+- `novo` (legado)
+- `preparando` (legado)
+- `enviado` (legado)
+- `saiu_entrega` (legado; normalizado para `saiu_para_entrega` em novas atualizações)
+- `concluido` (legado)
 
 ## 7. Preços de atacado
 
 Campos e coleções:
 
 - `products.wholesalePrice` — preço de atacado opcional por produto. Também é exposto como `wholesale_price`.
-- `wholesale_category_prices` — preço por categoria (`tub`, `cup`, `popsicle`).
+- `wholesale_category_prices` — preço por categoria (`pote`, `tub`, `cup`, `pic_agua`, `pic_leite`, `pic_premium`, `pic_ski`, `popsicle`, `acai`).
 - `wholesale_configs` — configuração global com `threshold` default `3` e `defaultDiscount` default `0.35`.
 
 Endpoints:
@@ -163,7 +175,7 @@ Body aceito:
   "source": "whatsapp",
   "status": "pendente",
   "items": [
-    { "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "tub" }
+    { "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "pote" }
   ],
   "total": 35
 }

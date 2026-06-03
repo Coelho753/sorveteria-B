@@ -1,7 +1,21 @@
 const mongoose = require('mongoose');
 
+const PRODUCT_CATEGORIES = ['pote', 'tub', 'cup', 'pic_agua', 'pic_leite', 'pic_premium', 'pic_ski', 'popsicle', 'acai'];
+
 const CATEGORY_ALIASES = {
-  tub: 'tub', pote: 'tub', cup: 'cup', copo: 'cup', popsicle: 'popsicle', picole: 'popsicle', picolé: 'popsicle', acai: 'acai', açaí: 'acai',
+  pote: 'pote',
+  tub: 'tub',
+  cup: 'cup',
+  copo: 'cup',
+  pic_agua: 'pic_agua',
+  pic_leite: 'pic_leite',
+  pic_premium: 'pic_premium',
+  pic_ski: 'pic_ski',
+  popsicle: 'popsicle',
+  picole: 'popsicle',
+  picolé: 'popsicle',
+  acai: 'acai',
+  açaí: 'acai',
 };
 
 const normalizeCategory = (category) => {
@@ -17,7 +31,7 @@ const productSchema = new mongoose.Schema(
     preco: { type: Number, required: true, min: 0 },
     wholesalePrice: { type: Number, min: 0, default: null },
     imagem: { type: String, trim: true, default: '' },
-    categoria: { type: String, required: true, enum: ['tub', 'cup', 'popsicle', 'acai'], trim: true },
+    categoria: { type: String, required: true, enum: PRODUCT_CATEGORIES, trim: true },
     tamanho: { type: String, trim: true, default: '' },
     estoque: { type: Number, min: 0, default: 0 },
     ativo: { type: Boolean, default: true },
@@ -43,3 +57,4 @@ productSchema.pre('validate', function normalizeProduct(next) {
 
 module.exports = mongoose.model('Product', productSchema);
 module.exports.normalizeCategory = normalizeCategory;
+module.exports.PRODUCT_CATEGORIES = PRODUCT_CATEGORIES;

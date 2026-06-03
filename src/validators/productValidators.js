@@ -1,4 +1,7 @@
 const { body } = require('express-validator');
+const { PRODUCT_CATEGORIES } = require('../models/Product');
+
+const ACCEPTED_CATEGORY_VALUES = [...PRODUCT_CATEGORIES, 'copo', 'picole', 'picolé', 'açaí'];
 
 const hasAny = (value, fields) => fields.some((field) => value[field] !== undefined && value[field] !== null && value[field] !== '');
 
@@ -22,8 +25,8 @@ exports.productValidator = [
   body('image').optional().isString().trim(),
   body('imageUrl').optional().isString().trim(),
   body('imagem').optional().isString().trim(),
-  body('category').optional().isIn(['tub', 'pote', 'cup', 'copo', 'popsicle', 'picole', 'picolé', 'acai', 'açaí']),
-  body('categoria').optional().isIn(['tub', 'pote', 'cup', 'copo', 'popsicle', 'picole', 'picolé', 'acai', 'açaí']),
+  body('category').optional().isIn(ACCEPTED_CATEGORY_VALUES),
+  body('categoria').optional().isIn(ACCEPTED_CATEGORY_VALUES),
   body('size').optional().isString().trim(),
   body('tamanho').optional().isString().trim(),
   body('stock').optional().isInt({ min: 0 }),

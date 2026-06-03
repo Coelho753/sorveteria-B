@@ -1,6 +1,7 @@
 const { body, param } = require('express-validator');
+const { ORDER_STATUSES } = require('../models/Order');
 
-const validStatuses = ['novo', 'pendente', 'preparando', 'enviado', 'saiu_entrega', 'entregue', 'cancelado', 'concluido', 'concluído'];
+const validStatuses = [...ORDER_STATUSES, 'concluído'];
 
 const itemsPayloadValidator = body().custom((value) => {
   const items = value.items || value.itens;

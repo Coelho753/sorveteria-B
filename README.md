@@ -81,7 +81,7 @@ As rotas estão disponíveis tanto sem prefixo quanto com `/api` para evitar 404
 
 `GET /products` é público e retorna somente produtos ativos com campos em inglês para o frontend (`name`, `description`, `price`, `image`, `imageUrl`, `category`, `size`, `stock`, `active`). O backend também aceita os aliases antigos em português (`nome`, `descricao`, `preco`, `imagem`, `categoria`, `tamanho`, `estoque`, `ativo`) em `POST /products` e `PUT /products/:id`.
 
-Categorias válidas: `tub`, `cup`, `popsicle` e `acai`. Também são aceitos aliases como `pote`, `copo`, `picole`, `picolé` e `açaí`, que são normalizados automaticamente.
+Categorias válidas: `pote`, `tub`, `cup`, `pic_agua`, `pic_leite`, `pic_premium`, `pic_ski`, `popsicle` e `acai`. Também são aceitos aliases como `copo`, `picole`, `picolé` e `açaí`, que são normalizados automaticamente.
 
 Para popular os 41 produtos atuais do frontend:
 
@@ -102,7 +102,7 @@ O backend expõe endpoints para o painel administrativo do frontend:
 - `PUT /users/:id` permite editar `name`, `phone`, `role`, `email`, `password`/`senha` e `address`.
 - `DELETE /users/:id` remove usuários para admins e desvincula pedidos antigos.
 - `GET /orders?userId=<id>` filtra pedidos por usuário.
-- `PUT /orders/:id` atualiza status.
+- `PUT /orders/:id` atualiza status (`pendente`, `pago`, `cancelado`, `separando`, `saiu_para_entrega`, `entregue`; legados `novo`, `preparando`, `enviado`).
 - `DELETE /orders/:id` remove pedidos para admins.
 - `GET /finance?period=7d` retorna KPIs, série diária (`vendasPorDia`/`salesByDay`) e produtos mais vendidos.
 
@@ -147,7 +147,7 @@ Body mínimo:
   "customerPhone": "5511965474023",
   "source": "whatsapp",
   "status": "pendente",
-  "items": [{ "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "tub" }],
+  "items": [{ "name": "Pote Chocolate", "price": 35, "quantity": 1, "category": "pote" }],
   "total": 35
 }
 ```
@@ -183,3 +183,5 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 - Rotas duplicadas com prefixo `/api` reduzem falhas 404 quando o frontend está configurado com `VITE_API_URL`, `API_URL` ou proxy apontando para `/api`.
 - Login externo via Google OAuth foi removido; a autenticação suportada é por email/senha com JWT.
 - Admins podem remover usuários e pedidos com `DELETE /users/:id` e `DELETE /orders/:id`, além de redefinir `email` e `password`/`senha` em `PUT /users/:id`.
+- Produtos aceitam as novas categorias do frontend (`pote`, `cup`, `pic_agua`, `pic_leite`, `pic_premium`, `pic_ski`, `acai`) e mantêm `tub`/`popsicle` por retrocompatibilidade.
+- Pedidos novos começam como `pendente`; `PUT /orders/:id` aceita o fluxo de status `pendente` → `pago`/`cancelado` → `separando` → `saiu_para_entrega` → `entregue`.

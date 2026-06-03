@@ -1,7 +1,10 @@
 const { body } = require('express-validator');
+const { PRODUCT_CATEGORIES } = require('../models/Product');
+
+const ACCEPTED_CATEGORY_VALUES = [...PRODUCT_CATEGORIES, 'copo', 'picole', 'picolé', 'açaí'];
 
 exports.categoryPriceValidator = [
-  body('category').isIn(['tub', 'pote', 'cup', 'copo', 'popsicle', 'picole', 'picolé']),
+  body('category').isIn(ACCEPTED_CATEGORY_VALUES),
   body('price').isFloat({ min: 0 }),
 ];
 

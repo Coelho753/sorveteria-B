@@ -24,10 +24,6 @@ const defaultCorsOrigins = [
 
 const configuredCorsOrigins = parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], defaultCorsOrigins.join(','))));
 
-const googleClientId = readEnv(['GOOGLE_CLIENT_ID']);
-const googleClientSecret = readEnv(['GOOGLE_CLIENT_SECRET']);
-const googleCallbackUrl = readEnv(['GOOGLE_CALLBACK_URL']);
-
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
@@ -39,10 +35,6 @@ const env = {
   jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '30d'),
   corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-yfbk.onrender.com'),
   corsAllowlist: [...new Set([...defaultCorsOrigins, ...configuredCorsOrigins])],
-  googleClientId,
-  googleClientSecret,
-  googleCallbackUrl,
-  googleOAuthEnabled: Boolean(googleClientId && googleClientSecret && googleCallbackUrl),
   whatsappWebhookSecret: readEnv(['WHATSAPP_WEBHOOK_SECRET']),
   whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511965474023'),
   storeAddress: readEnv(['STORE_ADDRESS', 'PUBLIC_ADDRESS'], ''),

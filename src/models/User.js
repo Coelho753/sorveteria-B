@@ -20,7 +20,6 @@ const userSchema = new mongoose.Schema(
     telefone: { type: String, trim: true, default: '' },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     senha: { type: String, select: false },
-    googleId: { type: String, unique: true, sparse: true, default: undefined },
     endereco: { type: enderecoSchema, default: () => ({}) },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     refreshToken: { type: String, default: null, select: false },

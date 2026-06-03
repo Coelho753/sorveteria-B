@@ -50,24 +50,3 @@ exports.logout = async (req, res, next) => {
     res.json({ message: 'Logout realizado com sucesso' });
   } catch (e) { next(e); }
 };
-
-const appendTokensToRedirect = (redirectUrl, accessToken, refreshToken) => {
-  const fallbackUrl = '/';
-  const target = redirectUrl || fallbackUrl;
-  const base = target.startsWith('http://') || target.startsWith('https://') ? undefined : 'http://localhost';
-  const url = new URL(target, base);
-  url.searchParams.set('token', accessToken);
-  url.searchParams.set('refresh', refreshToken);
-
-  if (base) return `${url.pathname}${url.search}${url.hash}`;
-  return url.toString();
-};
-
-exports.googleCallback = async (req, res, next) => {
-  try {
-    if (!req.user) return res.status(401).json({ message: 'Falha na autenticação com Google' });
-    const tokens = await issueTokens(req.user);
-    const redirectUrl = appendTokensToRedirect(req.authRedirect, tokens.accessToken, tokens.refreshToken);
-    res.redirect(redirectUrl);
-  } catch (e) { next(e); }
-};

@@ -1,9 +1,9 @@
 const Product = require('../models/Product');
 const WholesaleCategoryPrice = require('../models/WholesaleCategoryPrice');
 const WholesaleConfig = require('../models/WholesaleConfig');
-const { normalizeCategory } = require('../models/Product');
+const { normalizeCategory, PRODUCT_CATEGORIES } = require('../models/Product');
 
-const wholesaleCategories = ['tub', 'cup', 'popsicle'];
+const wholesaleCategories = PRODUCT_CATEGORIES;
 
 const getConfig = async () => WholesaleConfig.findOneAndUpdate(
   { key: 'default' },

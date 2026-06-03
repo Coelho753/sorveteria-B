@@ -1,15 +1,29 @@
 const crypto = require('crypto');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const User = require('../models/User');
 const env = require('../config/env');
 const WholesaleCategoryPrice = require('../models/WholesaleCategoryPrice');
 const WholesaleConfig = require('../models/WholesaleConfig');
-const { normalizeCategory } = require('../models/Product');
+const { normalizeCategory, PRODUCT_CATEGORIES } = require('../models/Product');
 
 const normalizeRequestItems = (body) => body.items || body.itens || [];
-const wholesaleCategories = ['tub', 'cup', 'popsicle'];
+const wholesaleCategories = PRODUCT_CATEGORIES;
 
-const normalizeStatus = (status) => (status === 'concluído' ? 'concluido' : status);
+const STATUS_ALIASES = {
+  'concluído': 'concluido',
+  saiu_entrega: 'saiu_para_entrega',
+};
+
+const normalizeStatus = (status) => STATUS_ALIASES[status] || status;
+
+const getCustomerSnapshot = async (userId, body = {}) => {
+  const user = await User.findById(userId).select('nome sobrenome telefone email');
+  if (!user) return {};
+  const customerName = body.customerName || body.name || body.nome || [user.nome, user.sobrenome].filter(Boolean).join(' ').trim() || user.email;
+  const customerPhone = body.customerPhone || body.phone || body.telefone || user.telefone || '';
+  return { customerName, customerPhone };
+};
 
 const getWholesaleConfig = async () => WholesaleConfig.findOneAndUpdate(
   { key: 'default' },
@@ -70,7 +84,8 @@ exports.create = async (req, res, next) => {
   try {
     const { itens, subtotal, valorTotal, wholesaleDiscount } = await buildOrderItems(normalizeRequestItems(req.body));
     const endereco = req.body.address || req.body.endereco || {};
-    const order = await Order.create({ usuario: req.user.sub, source: 'site', itens, subtotal, valorTotal, wholesaleDiscount, endereco });
+    const customerSnapshot = await getCustomerSnapshot(req.user.sub, req.body);
+    const order = await Order.create({ usuario: req.user.sub, ...customerSnapshot, source: 'site', status: 'pendente', itens, subtotal, valorTotal, wholesaleDiscount, endereco });
     res.status(201).json(order);
   } catch (e) { next(e); }
 };
@@ -102,7 +117,7 @@ exports.createWhatsapp = async (req, res, next) => {
 };
 
 exports.listMine = async (req, res, next) => {
-  try { res.json(await Order.find({ usuario: req.user.sub }).sort({ data: -1 })); } catch (e) { next(e); }
+  try { res.json(await Order.find({ usuario: req.user.sub }).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 })); } catch (e) { next(e); }
 };
 
 exports.listAll = async (req, res, next) => {
@@ -124,5 +139,13 @@ exports.updateStatus = async (req, res, next) => {
     const order = await Order.findByIdAndUpdate(req.params.id, { $set: update }, { new: true, runValidators: true });
     if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
     res.json(order);
+  } catch (e) { next(e); }
+};
+
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    res.json({ ok: true });
   } catch (e) { next(e); }
 };

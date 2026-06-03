@@ -22,10 +22,7 @@ JWT_REFRESH_SECRET=uma_chave_forte_para_refresh_token
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 CORS_ORIGIN=https://seu-frontend.com
-# Opcionais: habilitam login Google se os 3 estiverem definidos
-GOOGLE_CLIENT_ID=seu_google_client_id
-GOOGLE_CLIENT_SECRET=seu_google_client_secret
-GOOGLE_CALLBACK_URL=https://sua-api.onrender.com/auth/google/callback
+CORS_ALLOWLIST=https://seu-frontend.com,http://localhost:5173
 ```
 
 Para evitar o erro `secretOrPrivateKey must have a value`, o backend também aceita aliases comuns usados em hospedagens:
@@ -33,15 +30,14 @@ Para evitar o erro `secretOrPrivateKey must have a value`, o backend também ace
 - Refresh token: `JWT_REFRESH_SECRET`, `REFRESH_TOKEN_SECRET` ou `JWT_REFRESH_TOKEN_SECRET`
 - MongoDB: `MONGO_URI` ou `MONGODB_URI`
 
-Se MongoDB ou segredos JWT obrigatórios estiverem ausentes, a aplicação falha ao iniciar com uma mensagem clara nos logs do deploy. As variáveis do Google OAuth são opcionais para não derrubar o backend; se faltarem, somente `/auth/google` responde 503 até a configuração ser completada.
+Se MongoDB ou segredos JWT obrigatórios estiverem ausentes, a aplicação falha ao iniciar com uma mensagem clara nos logs do deploy.
 
 ## Autenticação
 - `POST /auth/register` cadastra o usuário e já retorna `user`, `accessToken` e `refreshToken`.
 - `POST /auth/login` retorna `user`, `accessToken` e `refreshToken`.
 - `POST /auth/refresh` valida e rotaciona o refresh token, retornando um novo par de tokens.
 - `POST /auth/logout` invalida o refresh token persistido.
-- `GET /auth/google?redirect=<url>` inicia login com Google sem sessão persistente.
-- `GET /auth/google/callback` recebe o retorno do Google, busca/cria usuário pelo email e redireciona para `redirect` com `?token=<accessToken>&refresh=<refreshToken>`.
+- Senhas devem ter no mínimo 10 caracteres, com maiúscula, minúscula, número e símbolo.
 
 ## CSRF
 Atualmente a API usa tokens JWT no header Authorization (não cookie), reduzindo risco clássico de CSRF. Se migrar para cookie HTTP-only, recomenda-se `csurf`, `sameSite=strict/lax` e token anti-CSRF.
@@ -54,14 +50,16 @@ npm run dev
 ```
 
 ## Rotas
+As rotas estão disponíveis tanto sem prefixo quanto com `/api` para evitar 404 quando o frontend usa uma base URL como `/api` (ex.: `POST /auth/login` e `POST /api/auth/login`).
+
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/refresh`
 - `POST /auth/logout`
-- `GET /auth/google?redirect=<url>`
-- `GET /auth/google/callback`
 - `GET /users/me`
 - `PUT /users/me`
+- `PUT /users/:id` (admin; aceita `name`/`nome`, `phone`/`telefone`, `address`/`endereco`, `role`, `email` e `password`/`senha`)
+- `DELETE /users/:id` (admin)
 - `GET /products` (público, lista ativos)
 - `GET /products/ativos` (público, lista ativos)
 - `GET /products/admin/todos` (admin, lista todos)
@@ -74,6 +72,8 @@ npm run dev
 - `POST /orders`
 - `GET /orders/me`
 - `GET /orders` (admin)
+- `PUT /orders/:id` (admin)
+- `DELETE /orders/:id` (admin)
 - `GET /finance?startDate=2026-01-01&endDate=2026-12-31` (admin)
 
 
@@ -99,9 +99,11 @@ Veja mais detalhes em `PRODUTOS_BACKEND.md`.
 O backend expõe endpoints para o painel administrativo do frontend:
 
 - `GET /users` lista usuários para admins e aceita `?search=`.
-- `PUT /users/:id` permite editar `name`, `phone`, `role` e `address`.
+- `PUT /users/:id` permite editar `name`, `phone`, `role`, `email`, `password`/`senha` e `address`.
+- `DELETE /users/:id` remove usuários para admins e desvincula pedidos antigos.
 - `GET /orders?userId=<id>` filtra pedidos por usuário.
 - `PUT /orders/:id` atualiza status.
+- `DELETE /orders/:id` remove pedidos para admins.
 - `GET /finance?period=7d` retorna KPIs, série diária (`vendasPorDia`/`salesByDay`) e produtos mais vendidos.
 
 Preços de atacado são configurados no backend:
@@ -176,6 +178,8 @@ O painel admin pode filtrar com `GET /orders?source=whatsapp`; o financeiro tamb
 - CORS permite o frontend atual `https://ayla-sorvetes-yfbk.onrender.com`, localhost e domínios hospedados em `.onrender.com`/`.lovable.app` via HTTPS, com headers `Authorization`, `Content-Type`, `x-ayla-signature` e `x-webhook-secret`.
 - Entradas de `body`, `query` e `params` passam por sanitização extra contra chaves Mongo perigosas (`$` e `.`), além de `mongo-sanitize`.
 - Mongoose usa `sanitizeFilter` e `strictQuery` para reduzir risco de NoSQL injection em filtros.
-- `GET /health` retorna `{ "status": "ok" }` para checagem de conexão/deploy.
+- `GET /health` e `GET /api/health` retornam `{ "status": "ok" }` para checagem de conexão/deploy.
 - Logs HTTP registram método, rota sem query string, status e `Origin`, permitindo confirmar no Render se o frontend chegou ao backend sem expor tokens ou dados sensíveis de query.
-- Google OAuth não impede mais a API de subir quando `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` ou `GOOGLE_CALLBACK_URL` estiverem ausentes; nesse caso apenas `/auth/google` fica temporariamente indisponível.
+- Rotas duplicadas com prefixo `/api` reduzem falhas 404 quando o frontend está configurado com `VITE_API_URL`, `API_URL` ou proxy apontando para `/api`.
+- Login externo via Google OAuth foi removido; a autenticação suportada é por email/senha com JWT.
+- Admins podem remover usuários e pedidos com `DELETE /users/:id` e `DELETE /orders/:id`, além de redefinir `email` e `password`/`senha` em `PUT /users/:id`.

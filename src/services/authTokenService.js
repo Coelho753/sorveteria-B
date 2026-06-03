@@ -11,7 +11,6 @@ const publicUser = (user) => ({
   telefone: user.telefone,
   phone: user.telefone,
   email: user.email,
-  googleId: user.googleId,
   endereco: user.endereco,
   address: user.endereco,
   role: user.role,

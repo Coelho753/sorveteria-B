@@ -1,5 +1,7 @@
 const Order = require('../models/Order');
 
+const FINANCIAL_STATUSES = ['pago', 'separando', 'saiu_para_entrega', 'entregue'];
+
 const buildDateRange = (query) => {
   const { period, startDate, endDate } = query;
   const now = new Date();
@@ -26,7 +28,7 @@ const buildDateRange = (query) => {
 exports.summary = async (req, res, next) => {
   try {
     const dateRange = buildDateRange(req.query);
-    const match = { status: { $ne: 'cancelado' } };
+    const match = { status: { $in: FINANCIAL_STATUSES } };
     if (dateRange) match.data = dateRange;
     if (req.query.source) match.source = req.query.source;
 

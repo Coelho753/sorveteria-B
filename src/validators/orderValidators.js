@@ -36,9 +36,17 @@ const commonOrderValidators = [
   body('valorTotal').optional().isFloat({ min: 0 }),
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
+  body('customerName').optional().isString().trim(),
+  body('customerPhone').optional().isString().trim(),
+  body('phone').optional().isString().trim(),
+  body('telefone').optional().isString().trim(),
 ];
 
-exports.createOrderValidator = commonOrderValidators;
+exports.createOrderValidator = [
+  ...commonOrderValidators,
+  body('source').optional().isIn(['external']),
+  body('status').optional().isIn(validStatuses),
+];
 
 exports.createWhatsappOrderValidator = [
   ...commonOrderValidators,

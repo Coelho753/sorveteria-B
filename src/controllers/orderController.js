@@ -6,16 +6,10 @@ const env = require('../config/env');
 const WholesaleCategoryPrice = require('../models/WholesaleCategoryPrice');
 const WholesaleConfig = require('../models/WholesaleConfig');
 const { normalizeCategory, PRODUCT_CATEGORIES } = require('../models/Product');
+const { normalizeStatus } = require('../models/Order');
 
 const normalizeRequestItems = (body) => body.items || body.itens || [];
 const wholesaleCategories = PRODUCT_CATEGORIES;
-
-const STATUS_ALIASES = {
-  'concluído': 'concluido',
-  saiu_entrega: 'saiu_para_entrega',
-};
-
-const normalizeStatus = (status) => STATUS_ALIASES[status] || status;
 
 const getCustomerSnapshot = async (userId, body = {}) => {
   const user = await User.findById(userId).select('nome sobrenome telefone email');
@@ -84,8 +78,15 @@ exports.create = async (req, res, next) => {
   try {
     const { itens, subtotal, valorTotal, wholesaleDiscount } = await buildOrderItems(normalizeRequestItems(req.body));
     const endereco = req.body.address || req.body.endereco || {};
-    const customerSnapshot = await getCustomerSnapshot(req.user.sub, req.body);
-    const order = await Order.create({ usuario: req.user.sub, ...customerSnapshot, source: 'site', status: 'pendente', itens, subtotal, valorTotal, wholesaleDiscount, endereco });
+    const isAdminExternal = req.user.role === 'admin' && req.body.source === 'external';
+    const customerSnapshot = isAdminExternal
+      ? {
+        customerName: req.body.customerName || req.body.name || req.body.nome || '',
+        customerPhone: req.body.customerPhone || req.body.phone || req.body.telefone || '',
+      }
+      : await getCustomerSnapshot(req.user.sub, req.body);
+    const status = isAdminExternal ? normalizeStatus(req.body.status || 'pago') : 'pendente';
+    const order = await Order.create({ usuario: isAdminExternal ? undefined : req.user.sub, ...customerSnapshot, source: isAdminExternal ? 'external' : 'site', status, itens, subtotal, valorTotal, wholesaleDiscount, endereco });
     res.status(201).json(order);
   } catch (e) { next(e); }
 };

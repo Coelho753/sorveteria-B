@@ -2,6 +2,17 @@ const mongoose = require('mongoose');
 
 const ORDER_STATUSES = ['pendente', 'pago', 'cancelado', 'separando', 'saiu_para_entrega', 'entregue', 'novo', 'preparando', 'enviado', 'saiu_entrega', 'concluido'];
 
+const STATUS_ALIASES = {
+  'concluído': 'concluido',
+  saiu_entrega: 'saiu_para_entrega',
+};
+
+const normalizeStatus = (status) => {
+  if (!status) return status;
+  const key = status.toString().trim().toLowerCase();
+  return STATUS_ALIASES[key] || key;
+};
+
 const itemSchema = new mongoose.Schema(
   {
     produtoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
@@ -28,7 +39,7 @@ const orderSchema = new mongoose.Schema(
     usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     customerName: { type: String, trim: true, default: '' },
     customerPhone: { type: String, trim: true, default: '' },
-    source: { type: String, enum: ['site', 'whatsapp', 'admin'], default: 'site' },
+    source: { type: String, enum: ['site', 'whatsapp', 'admin', 'external'], default: 'site' },
     itens: { type: [itemSchema], required: true },
     valorTotal: { type: Number, required: true, min: 0 },
     subtotal: { type: Number, min: 0, default: 0 },
@@ -63,5 +74,11 @@ orderSchema.virtual('total').get(function getTotal() { return this.valorTotal; }
 orderSchema.virtual('address').get(function getAddress() { return this.endereco; });
 orderSchema.virtual('createdAtAlias').get(function getCreatedAtAlias() { return this.data; });
 
+orderSchema.pre('validate', function normalizeOrder(next) {
+  this.status = normalizeStatus(this.status);
+  next();
+});
+
 module.exports = mongoose.model('Order', orderSchema);
 module.exports.ORDER_STATUSES = ORDER_STATUSES;
+module.exports.normalizeStatus = normalizeStatus;

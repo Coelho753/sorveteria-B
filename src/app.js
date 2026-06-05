@@ -58,6 +58,7 @@ const mountRoutes = (basePath = '') => {
   app.use(`${basePath}/products`, require('./routes/productRoutes'));
   app.use(`${basePath}/orders`, require('./routes/orderRoutes'));
   app.use(`${basePath}/cart`, require('./routes/cartRoutes'));
+  app.use(`${basePath}/carousels`, require('./routes/carouselRoutes'));
   app.use(`${basePath}/finance`, require('./routes/financeRoutes'));
   app.use(`${basePath}/wholesale`, require('./routes/wholesaleRoutes'));
   app.use(`${basePath}/config`, require('./routes/configRoutes'));

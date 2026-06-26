@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const { PRODUCT_CATEGORIES } = require('../models/Product');
 
 const ACCEPTED_CATEGORY_VALUES = [...PRODUCT_CATEGORIES, 'copo', 'picole', 'picolé', 'açaí'];
@@ -33,4 +33,21 @@ exports.productValidator = [
   body('estoque').optional().isInt({ min: 0 }),
   body('active').optional().isBoolean(),
   body('ativo').optional().isBoolean(),
+];
+
+exports.productIdValidator = [
+  param('id').isMongoId(),
+];
+
+exports.stockValidator = [
+  param('id').isMongoId(),
+  body().custom((value) => {
+    if (value.stock === undefined && value.estoque === undefined && value.delta === undefined) {
+      throw new Error('Informe stock, estoque ou delta');
+    }
+    return true;
+  }),
+  body('stock').optional().isInt({ min: 0 }),
+  body('estoque').optional().isInt({ min: 0 }),
+  body('delta').optional().isInt(),
 ];

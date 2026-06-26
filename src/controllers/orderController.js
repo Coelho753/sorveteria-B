@@ -13,6 +13,7 @@ const normalizeRequestItems = (body) => body.items || body.itens || [];
 const wholesaleCategories = PRODUCT_CATEGORIES;
 const CONFIRMED_STATUSES = ['pago', 'separando', 'saiu_para_entrega', 'entregue'];
 const shouldApplyInventory = (status) => CONFIRMED_STATUSES.includes(normalizeStatus(status));
+const orderStreamClients = new Set();
 
 const createClientError = (message, statusCode = 400) => {
   const error = new Error(message);
@@ -137,41 +138,53 @@ const buildOrderDate = (body) => {
   return new Date(dateInput);
 };
 
+const broadcastOrdersEvent = (event, order) => {
+  const payload = JSON.stringify({ event, order });
+  for (const client of orderStreamClients) client.write(`data: ${payload}\n\n`);
+};
+
 exports.create = async (req, res, next) => {
   try {
     const order = await runInTransaction(async (session) => {
       const endereco = req.body.address || req.body.endereco || {};
-      const isAdminExternal = req.user.role === 'admin' && req.body.source === 'external';
+      const isExternal = req.body.source === 'external';
+      const isAdmin = req.user?.role === 'admin';
+      if (isExternal && !isAdmin) throw createClientError('Apenas admin pode criar pedido externo', 403);
+      const isAdminExternal = isAdmin && isExternal;
       const { itens, subtotal, valorTotal, wholesaleDiscount } = await buildOrderItems(normalizeRequestItems(req.body), { applyWholesale: !isAdminExternal, preferRequestPrice: isAdminExternal });
       const customerSnapshot = isAdminExternal
         ? {
           customerName: req.body.customerName || req.body.name || req.body.nome || '',
           customerPhone: req.body.customerPhone || req.body.phone || req.body.telefone || '',
         }
-        : await getCustomerSnapshot(req.user.sub, req.body);
+        : (req.user ? await getCustomerSnapshot(req.user.id, req.body) : {
+          customerName: req.body.customerName || req.body.name || req.body.nome || '',
+          customerPhone: req.body.customerPhone || req.body.phone || req.body.telefone || '',
+        });
       const status = normalizeStatus(req.body.status || (isAdminExternal ? 'pago' : 'pendente'));
       const inventoryApplied = shouldApplyInventory(status);
       if (inventoryApplied) await assertStockAvailable(itens, session);
       if (inventoryApplied) await adjustInventory(itens, 'decrement', session);
 
-      const requestedTotal = req.body.total ?? req.body.valorTotal;
-      const finalTotal = isAdminExternal && requestedTotal !== undefined ? Number(requestedTotal) : valorTotal;
+      const finalTotal = valorTotal;
       const createdAt = isAdminExternal ? buildOrderDate(req.body) : undefined;
       const [createdOrder] = await Order.create([{
-        usuario: isAdminExternal ? undefined : req.user.sub,
+        usuario: isAdminExternal || !req.user ? undefined : req.user.id,
         ...customerSnapshot,
-        source: isAdminExternal ? 'external' : 'site',
+        source: isAdminExternal ? 'external' : 'app',
         status,
         inventoryApplied,
         itens,
-        subtotal: isAdminExternal && requestedTotal !== undefined ? finalTotal : subtotal,
+        subtotal,
         valorTotal: finalTotal,
-        wholesaleDiscount: isAdminExternal && requestedTotal !== undefined ? 0 : wholesaleDiscount,
+        wholesaleDiscount,
         endereco,
+        notes: req.body.notes || '',
         ...(createdAt ? { data: createdAt } : {}),
       }], { session });
       return createdOrder;
     });
+    broadcastOrdersEvent('created', order);
     res.status(201).json(order);
   } catch (e) { next(e); }
 };
@@ -207,12 +220,13 @@ exports.createWhatsapp = async (req, res, next) => {
       return createdOrder;
     });
 
+    broadcastOrdersEvent('created', order);
     res.status(201).json(order);
   } catch (e) { next(e); }
 };
 
 exports.listMine = async (req, res, next) => {
-  try { res.json(await Order.find({ usuario: req.user.sub }).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 })); } catch (e) { next(e); }
+  try { res.json(await Order.find({ usuario: req.user.id }).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 })); } catch (e) { next(e); }
 };
 
 exports.streamMine = (req, res) => {
@@ -225,7 +239,7 @@ exports.streamMine = (req, res) => {
 
   const send = async () => {
     try {
-      const orders = await Order.find({ usuario: req.user.sub }).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 });
+      const orders = await Order.find({ usuario: req.user.id }).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 });
       res.write(`data: ${JSON.stringify(orders)}\n\n`);
     } catch (error) {
       res.write(`event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`);
@@ -237,6 +251,18 @@ exports.streamMine = (req, res) => {
   req.on('close', () => clearInterval(interval));
 };
 
+exports.streamAll = (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.flushHeaders?.();
+  orderStreamClients.add(res);
+  res.write(`data: ${JSON.stringify({ event: 'connected' })}\n\n`);
+  req.on('close', () => orderStreamClients.delete(res));
+};
+
 exports.listAll = async (req, res, next) => {
   try {
     const filter = {};
@@ -244,6 +270,17 @@ exports.listAll = async (req, res, next) => {
     if (req.query.source) filter.source = req.query.source;
     if (req.query.status) filter.status = normalizeStatus(req.query.status);
     res.json(await Order.find(filter).populate('usuario', 'nome sobrenome telefone email').sort({ data: -1 }));
+  } catch (e) { next(e); }
+};
+
+exports.getById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('usuario', 'nome sobrenome telefone email');
+    if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    const isAdmin = req.user.role === 'admin';
+    const isOwner = String(order.usuario?._id || order.usuario) === String(req.user.id);
+    if (!isAdmin && !isOwner) return res.status(403).json({ message: 'Acesso negado' });
+    res.json(order);
   } catch (e) { next(e); }
 };
 
@@ -257,6 +294,7 @@ exports.updateStatus = async (req, res, next) => {
       const nextStatus = req.body.status !== undefined ? normalizeStatus(req.body.status) : existingOrder.status;
       if (req.body.status !== undefined) update.status = nextStatus;
       if (req.body.total !== undefined || req.body.valorTotal !== undefined) update.valorTotal = Number(req.body.total ?? req.body.valorTotal);
+      if (req.body.notes !== undefined) update.notes = req.body.notes;
 
       if (nextStatus === 'cancelado' && existingOrder.inventoryApplied) {
         await adjustInventory(existingOrder, 'increment', session);
@@ -270,6 +308,7 @@ exports.updateStatus = async (req, res, next) => {
       return Order.findByIdAndUpdate(req.params.id, { $set: update }, { new: true, runValidators: true, session });
     });
     if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    broadcastOrdersEvent('updated', order);
     res.json(order);
   } catch (e) { next(e); }
 };
@@ -283,6 +322,7 @@ exports.deleteOrder = async (req, res, next) => {
       return Order.findByIdAndDelete(req.params.id, { session });
     });
     if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    broadcastOrdersEvent('deleted', order);
     res.json({ ok: true });
   } catch (e) { next(e); }
 };

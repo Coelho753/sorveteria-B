@@ -1,6 +1,6 @@
 const Order = require('../models/Order');
 
-const FINANCIAL_STATUSES = ['pago', 'separando', 'saiu_para_entrega', 'entregue'];
+const FINANCIAL_STATUSES = ['pago', 'separando', 'saiu_para_entrega', 'entregue', 'preparando', 'enviado'];
 
 const buildDateRange = (query) => {
   const { period, startDate, endDate } = query;
@@ -53,11 +53,37 @@ exports.summary = async (req, res, next) => {
       { $limit: 10 },
     ]);
 
+    const totalsBySource = await Order.aggregate([
+      { $match: match },
+      { $unwind: { path: '$itens', preserveNullAndEmptyArrays: true } },
+      { $group: { _id: { orderId: '$_id', source: '$source' }, value: { $first: '$valorTotal' }, itemsQty: { $sum: '$itens.quantidade' } } },
+      { $group: { _id: '$_id.source', value: { $sum: '$value' }, itemsQty: { $sum: '$itemsQty' } } },
+    ]);
+
+    const statusCounts = await Order.aggregate([
+      { $match: dateRange ? { data: dateRange } : {} },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+
+    const getSource = (source) => totalsBySource.find((row) => row._id === source) || {};
+    const delivered = statusCounts.find((row) => row._id === 'entregue')?.count || 0;
+    const cancelled = statusCounts.find((row) => row._id === 'cancelado')?.count || 0;
+
     const totalVendas = totals?.totalVendas || 0;
     const quantidadePedidos = totals?.quantidadePedidos || 0;
     const ticketMedio = totals?.ticketMedio || 0;
 
     res.json({
+      total: totalVendas,
+      ordersTotal: (getSource('app').value || 0) + (getSource('site').value || 0) + (getSource('whatsapp').value || 0),
+      externalTotal: getSource('external').value || 0,
+      appItemsQty: (getSource('app').itemsQty || 0) + (getSource('site').itemsQty || 0) + (getSource('whatsapp').itemsQty || 0),
+      externalItemsQty: getSource('external').itemsQty || 0,
+      delivered,
+      cancelled,
+      ticket: ticketMedio,
+      count: quantidadePedidos,
+      series: vendasPorDia.map((row) => ({ day: row.date, value: row.total })),
       totalVendas,
       quantidadePedidos,
       ticketMedio,

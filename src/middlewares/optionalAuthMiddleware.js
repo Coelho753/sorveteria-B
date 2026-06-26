@@ -7,13 +7,13 @@ module.exports = (req, res, next) => {
   const bearer = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
   const token = bearer || cookies.ayla_at;
 
-  if (!token) return res.status(401).json({ message: 'Não autenticado' });
+  if (!token) return next();
 
   try {
     const decoded = verifyAccessToken(token);
     req.user = { ...decoded, id: decoded.id || decoded.sub };
-    next();
   } catch {
-    res.status(401).json({ message: 'Não autenticado' });
+    // Pedido anônimo continua permitido; rotas protegidas usam requireAuth.
   }
+  next();
 };

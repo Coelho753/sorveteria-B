@@ -22,7 +22,7 @@ const defaultCorsOrigins = [
   'http://localhost:3000',
 ];
 
-const configuredCorsOrigins = parseOrigins(readEnv(['CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], defaultCorsOrigins.join(','))));
+const configuredCorsOrigins = parseOrigins(readEnv(['CORS_ORIGINS', 'CORS_ALLOWLIST'], readEnv(['CORS_ORIGIN'], defaultCorsOrigins.join(','))));
 
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -31,7 +31,7 @@ const env = {
   mongoUri: readEnv(['MONGO_URI', 'MONGODB_URI']),
   jwtAccessSecret: readEnv(['JWT_ACCESS_SECRET', 'JWT_SECRET', 'ACCESS_TOKEN_SECRET', 'JWT_SECRET_KEY', 'SECRET_KEY']),
   jwtRefreshSecret: readEnv(['JWT_REFRESH_SECRET', 'REFRESH_TOKEN_SECRET', 'JWT_REFRESH_TOKEN_SECRET']),
-  jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '15m'),
+  jwtAccessExpiresIn: readEnv(['JWT_ACCESS_EXPIRES_IN', 'ACCESS_TOKEN_EXPIRES_IN'], '1h'),
   jwtRefreshExpiresIn: readEnv(['JWT_REFRESH_EXPIRES_IN', 'REFRESH_TOKEN_EXPIRES_IN'], '30d'),
   corsOrigin: readEnv(['CORS_ORIGIN'], 'https://ayla-sorvetes-yfbk.onrender.com'),
   corsAllowlist: [...new Set([...defaultCorsOrigins, ...configuredCorsOrigins])],
@@ -39,6 +39,8 @@ const env = {
   whatsappPhone: readEnv(['WHATSAPP_PHONE'], '5511965474023'),
   storeAddress: readEnv(['STORE_ADDRESS', 'PUBLIC_ADDRESS'], ''),
   storeHours: readEnv(['STORE_HOURS', 'PUBLIC_HOURS'], ''),
+  adminBootstrapEmail: readEnv(['ADMIN_BOOTSTRAP_EMAIL']),
+  adminBootstrapPassword: readEnv(['ADMIN_BOOTSTRAP_PASSWORD']),
 };
 
 const requiredVariables = [
@@ -53,6 +55,10 @@ const missingVariables = requiredVariables
 
 if (missingVariables.length) {
   throw new Error(`Variáveis de ambiente obrigatórias ausentes: ${missingVariables.join('; ')}`);
+}
+
+if (env.jwtAccessSecret.length < 32 || env.jwtRefreshSecret.length < 32) {
+  throw new Error('JWT_SECRET e JWT_REFRESH_SECRET devem ter no mínimo 32 caracteres');
 }
 
 module.exports = env;

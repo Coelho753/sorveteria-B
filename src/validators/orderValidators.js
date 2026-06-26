@@ -40,11 +40,14 @@ const commonOrderValidators = [
   body('customerPhone').optional().isString().trim(),
   body('phone').optional().isString().trim(),
   body('telefone').optional().isString().trim(),
+  body('createdAt').optional().isISO8601(),
+  body('data').optional().isISO8601(),
+  body('notes').optional().isString().trim(),
 ];
 
 exports.createOrderValidator = [
   ...commonOrderValidators,
-  body('source').optional().isIn(['external']),
+  body('source').optional().isIn(['app', 'external']),
   body('status').optional().isIn(validStatuses),
 ];
 
@@ -67,8 +70,13 @@ exports.updateOrderStatusValidator = [
   body('status').optional().isIn(validStatuses),
   body('total').optional().isFloat({ min: 0 }),
   body('valorTotal').optional().isFloat({ min: 0 }),
+  body('notes').optional().isString().trim(),
 ];
 
 exports.deleteOrderValidator = [
+  param('id').isMongoId(),
+];
+
+exports.getOrderValidator = [
   param('id').isMongoId(),
 ];

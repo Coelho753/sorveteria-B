@@ -17,12 +17,12 @@ const publicUser = (user) => ({
 });
 
 const issueTokens = async (user) => {
-  const payload = { sub: user._id.toString(), role: user.role, email: user.email };
+  const payload = { sub: user._id.toString(), id: user._id.toString(), role: user.role, email: user.email };
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken({ sub: user._id.toString() });
   user.refreshToken = hashToken(refreshToken);
   await user.save();
-  return { accessToken, refreshToken };
+  return { accessToken, token: accessToken, refreshToken };
 };
 
 module.exports = { hashToken, issueTokens, publicUser };

@@ -36,7 +36,7 @@ const assertEmailIsAvailable = async (email, currentUserId) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.sub);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
     res.json(publicUser(user));
   } catch (e) { next(e); }
@@ -45,13 +45,13 @@ exports.getMe = async (req, res, next) => {
 exports.updateMe = async (req, res, next) => {
   try {
     if (req.body.role !== undefined) return res.status(400).json({ message: 'Campo inválido' });
-    const { currentPassword, newPassword, senha } = req.body;
-    const user = await User.findById(req.user.sub).select('+senha');
+    const { currentPassword, newPassword, senha, password } = req.body;
+    const user = await User.findById(req.user.id).select('+senha');
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
 
     applyProfileFields(user, req.body);
 
-    const passwordToSet = newPassword || senha;
+    const passwordToSet = newPassword || senha || password;
     if (passwordToSet) {
       if (user.senha) {
         if (!currentPassword) return res.status(400).json({ message: 'Senha atual obrigatória para alterar a senha' });
@@ -73,6 +73,35 @@ exports.listUsers = async (req, res, next) => {
       ? { $or: [{ nome: new RegExp(search, 'i') }, { email: new RegExp(search, 'i') }, { telefone: new RegExp(search, 'i') }] }
       : {};
     res.json(await User.find(filter).sort({ createdAt: -1 }).select('-senha -refreshToken'));
+  } catch (e) { next(e); }
+};
+
+exports.getUser = async (req, res, next) => {
+  try {
+    const isAdmin = req.user.role === 'admin';
+    const isSelf = String(getAuthenticatedUserId(req)) === String(req.params.id);
+    if (!isAdmin && !isSelf) return res.status(403).json({ message: 'Acesso negado' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+    res.json(publicUser(user));
+  } catch (e) { next(e); }
+};
+
+exports.createUser = async (req, res, next) => {
+  try {
+    const email = req.body.email.toLowerCase();
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(409).json({ message: 'Email já está em uso' });
+    const senha = await bcrypt.hash(req.body.password ?? req.body.senha, 12);
+    const user = await User.create({
+      nome: req.body.name ?? req.body.nome,
+      email,
+      senha,
+      telefone: req.body.phone ?? req.body.telefone,
+      endereco: req.body.address ?? req.body.endereco,
+      role: req.body.role || 'user',
+    });
+    res.status(201).json(publicUser(user));
   } catch (e) { next(e); }
 };
 

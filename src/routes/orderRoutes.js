@@ -8,6 +8,7 @@ const validate = require('../middlewares/validate');
 router.post('/whatsapp', createWhatsappOrderValidator, validate, c.createWhatsapp);
 router.post('/', auth, createOrderValidator, validate, c.create);
 router.get('/me', auth, c.listMine);
+router.get('/me/stream', auth, c.streamMine);
 router.get('/', auth, admin, c.listAll);
 router.put('/:id', auth, admin, updateOrderStatusValidator, validate, c.updateStatus);
 router.delete('/:id', auth, admin, deleteOrderValidator, validate, c.deleteOrder);

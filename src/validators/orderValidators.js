@@ -40,6 +40,8 @@ const commonOrderValidators = [
   body('customerPhone').optional().isString().trim(),
   body('phone').optional().isString().trim(),
   body('telefone').optional().isString().trim(),
+  body('createdAt').optional().isISO8601(),
+  body('data').optional().isISO8601(),
 ];
 
 exports.createOrderValidator = [

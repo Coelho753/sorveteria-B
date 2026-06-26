@@ -44,6 +44,7 @@ const orderSchema = new mongoose.Schema(
     valorTotal: { type: Number, required: true, min: 0 },
     subtotal: { type: Number, min: 0, default: 0 },
     wholesaleDiscount: { type: Number, min: 0, default: 0 },
+    inventoryApplied: { type: Boolean, default: false },
     endereco: { type: addressSchema, default: () => ({}) },
     status: { type: String, enum: ORDER_STATUSES, default: 'pendente' },
     data: { type: Date, default: Date.now },
@@ -73,6 +74,7 @@ orderSchema.virtual('items').get(function getItems() {
 orderSchema.virtual('total').get(function getTotal() { return this.valorTotal; });
 orderSchema.virtual('address').get(function getAddress() { return this.endereco; });
 orderSchema.virtual('createdAtAlias').get(function getCreatedAtAlias() { return this.data; });
+orderSchema.virtual('createdAt').get(function getCreatedAt() { return this.data; });
 
 orderSchema.pre('validate', function normalizeOrder(next) {
   this.status = normalizeStatus(this.status);

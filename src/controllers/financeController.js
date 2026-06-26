@@ -72,3 +72,43 @@ exports.summary = async (req, res, next) => {
     });
   } catch (e) { next(e); }
 };
+
+
+exports.adminFinancialSummary = async (req, res, next) => {
+  try {
+    const dateRange = buildDateRange(req.query);
+    const match = { status: { $in: FINANCIAL_STATUSES } };
+    if (dateRange) match.data = dateRange;
+    if (req.query.source) match.source = req.query.source;
+
+    const [totals] = await Order.aggregate([
+      { $match: match },
+      { $group: { _id: null, total: { $sum: '$valorTotal' }, count: { $sum: 1 } } },
+      { $project: { _id: 0, total: 1, count: 1, ticket: { $cond: [{ $eq: ['$count', 0] }, 0, { $divide: ['$total', '$count'] }] } } },
+    ]);
+
+    const byDay = await Order.aggregate([
+      { $match: match },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$data' } }, value: { $sum: '$valorTotal' }, count: { $sum: 1 } } },
+      { $project: { _id: 0, day: '$_id', value: 1, count: 1 } },
+      { $sort: { day: 1 } },
+    ]);
+
+    const topProducts = await Order.aggregate([
+      { $match: match },
+      { $unwind: '$itens' },
+      { $group: { _id: '$itens.nome', name: { $first: '$itens.nome' }, qty: { $sum: '$itens.quantidade' }, revenue: { $sum: { $multiply: ['$itens.quantidade', '$itens.preco'] } } } },
+      { $project: { _id: 0, name: 1, qty: 1, revenue: 1 } },
+      { $sort: { qty: -1 } },
+      { $limit: 10 },
+    ]);
+
+    res.json({
+      total: totals?.total || 0,
+      ticket: totals?.ticket || 0,
+      count: totals?.count || 0,
+      byDay,
+      topProducts,
+    });
+  } catch (e) { next(e); }
+};

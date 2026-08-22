@@ -83,11 +83,6 @@ orderSchema.pre('validate', function normalizeOrder(next) {
   next();
 });
 
-orderSchema.pre('validate', function normalizeOrder(next) {
-  this.status = normalizeStatus(this.status);
-  next();
-});
-
 module.exports = mongoose.model('Order', orderSchema);
 module.exports.ORDER_STATUSES = ORDER_STATUSES;
 module.exports.normalizeStatus = normalizeStatus;

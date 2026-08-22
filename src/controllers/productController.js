@@ -39,3 +39,22 @@ exports.remove = async (req, res, next) => {
 
 exports.listAll = async (req, res, next) => { try { res.json(await Product.find().sort({ categoria: 1, nome: 1 })); } catch (e) { next(e); } };
 exports.listActive = async (req, res, next) => { try { res.json(await Product.find({ ativo: true }).sort({ categoria: 1, nome: 1 })); } catch (e) { next(e); } };
+exports.getById = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product || !product.ativo) return res.status(404).json({ message: 'Produto não encontrado' });
+    res.json(product);
+  } catch (e) { next(e); }
+};
+exports.adjustStock = async (req, res, next) => {
+  try {
+    const delta = req.body.delta !== undefined ? Number(req.body.delta) : undefined;
+    const filter = delta < 0 ? { _id: req.params.id, estoque: { $gte: Math.abs(delta) } } : { _id: req.params.id };
+    const update = delta !== undefined
+      ? { $inc: { estoque: delta } }
+      : { $set: { estoque: Number(req.body.stock ?? req.body.estoque) } };
+    const product = await Product.findOneAndUpdate(filter, update, { new: true, runValidators: true });
+    if (!product) return res.status(404).json({ message: 'Produto não encontrado' });
+    res.json(product);
+  } catch (e) { next(e); }
+};

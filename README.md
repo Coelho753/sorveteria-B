@@ -12,25 +12,25 @@ Backend Node.js + Express + MongoDB com arquitetura MVC, autenticação JWT (acc
 - CORS configurável via variável de ambiente
 
 ## Variáveis de ambiente
-Configure no Render antes do deploy:
 
-```env
-PORT=3000
-MONGO_URI=mongodb+srv://usuario:senha@cluster/database
-JWT_ACCESS_SECRET=uma_chave_forte_para_access_token
-JWT_REFRESH_SECRET=uma_chave_forte_para_refresh_token
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-CORS_ORIGIN=https://seu-frontend.com
-CORS_ALLOWLIST=https://seu-frontend.com,http://localhost:5173
+Configure as variáveis no **Render** (Environment) e, para desenvolvimento local, copie `.env.example` para `.env`. O arquivo `.env` é ignorado pelo Git e não deve ser enviado ao repositório.
+
+```bash
+cp .env.example .env
 ```
 
-Para evitar o erro `secretOrPrivateKey must have a value`, o backend também aceita aliases comuns usados em hospedagens:
-- Access token: `JWT_ACCESS_SECRET`, `JWT_SECRET`, `ACCESS_TOKEN_SECRET`, `JWT_SECRET_KEY` ou `SECRET_KEY`
-- Refresh token: `JWT_REFRESH_SECRET`, `REFRESH_TOKEN_SECRET` ou `JWT_REFRESH_TOKEN_SECRET`
-- MongoDB: `MONGO_URI` ou `MONGODB_URI`
+Para conectar ao MongoDB Atlas, defina `MONGO_URI` com a URI completa fornecida pelo Atlas. Exemplo de formato:
 
-Se MongoDB ou segredos JWT obrigatórios estiverem ausentes, a aplicação falha ao iniciar com uma mensagem clara nos logs do deploy.
+```env
+MONGO_URI=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/?retryWrites=true&w=majority&appName=AylaSorvetes
+JWT_SECRET=<segredo-com-no-minimo-32-caracteres>
+JWT_REFRESH_SECRET=<segredo-com-no-minimo-32-caracteres>
+CORS_ORIGINS=https://sorveteriaayla.com.br,https://www.sorveteriaayla.com.br
+```
+
+A aplicação aceita `MONGO_URI` ou `MONGODB_URI`. Os segredos JWT precisam ter pelo menos 32 caracteres e a inicialização falha com uma mensagem clara se estiverem ausentes ou inválidos. Para liberar o acesso do Render, confirme também no Atlas que o IP/egress da hospedagem está permitido em **Network Access** e que o usuário de banco possui acesso ao cluster.
+
+Opcionalmente, `ADMIN_BOOTSTRAP_EMAIL` e `ADMIN_BOOTSTRAP_PASSWORD` criam um único administrador quando a coleção `users` ainda está vazia.
 
 ## Autenticação
 - `POST /auth/register` cadastra o usuário e já retorna `user`, `accessToken` e `refreshToken`.

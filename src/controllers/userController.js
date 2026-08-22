@@ -9,12 +9,14 @@ const mergeAddress = (currentAddress, nextAddress) => ({
   ...nextAddress,
 });
 
+const getAuthenticatedUserId = (req) => req.user.sub || req.user.id;
+
 const applyProfileFields = (user, body, allowAdminFields = false) => {
   const { nome, name, firstName, sobrenome, lastName, email, telefone, phone, endereco, address } = body;
 
   if (nome || name || firstName) user.nome = nome || name || firstName;
   if (sobrenome || lastName) user.sobrenome = sobrenome || lastName;
-  if (email) user.email = email.toLowerCase();
+  if (allowAdminFields && email) user.email = email.toLowerCase();
   if (telefone || phone) user.telefone = telefone || phone;
   if (endereco || address) user.endereco = mergeAddress(user.endereco, endereco || address);
 
@@ -34,7 +36,7 @@ const assertEmailIsAvailable = async (email, currentUserId) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.sub);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
     res.json(publicUser(user));
   } catch (e) { next(e); }
@@ -43,13 +45,13 @@ exports.getMe = async (req, res, next) => {
 exports.updateMe = async (req, res, next) => {
   try {
     if (req.body.role !== undefined) return res.status(400).json({ message: 'Campo inválido' });
-    const { currentPassword, newPassword, senha } = req.body;
-    const user = await User.findById(req.user.sub).select('+senha');
+    const { currentPassword, newPassword, senha, password } = req.body;
+    const user = await User.findById(req.user.id).select('+senha');
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
 
     applyProfileFields(user, req.body);
 
-    const passwordToSet = newPassword || senha;
+    const passwordToSet = newPassword || senha || password;
     if (passwordToSet) {
       if (user.senha) {
         if (!currentPassword) return res.status(400).json({ message: 'Senha atual obrigatória para alterar a senha' });
@@ -74,26 +76,65 @@ exports.listUsers = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+exports.getUser = async (req, res, next) => {
+  try {
+    const isAdmin = req.user.role === 'admin';
+    const isSelf = String(getAuthenticatedUserId(req)) === String(req.params.id);
+    if (!isAdmin && !isSelf) return res.status(403).json({ message: 'Acesso negado' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+    res.json(publicUser(user));
+  } catch (e) { next(e); }
+};
+
+exports.createUser = async (req, res, next) => {
+  try {
+    const email = req.body.email.toLowerCase();
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(409).json({ message: 'Email já está em uso' });
+    const senha = await bcrypt.hash(req.body.password ?? req.body.senha, 12);
+    const user = await User.create({
+      nome: req.body.name ?? req.body.nome,
+      email,
+      senha,
+      telefone: req.body.phone ?? req.body.telefone,
+      endereco: req.body.address ?? req.body.endereco,
+      role: req.body.role || 'user',
+    });
+    res.status(201).json(publicUser(user));
+  } catch (e) { next(e); }
+};
+
 exports.updateUser = async (req, res, next) => {
   try {
+    const isAdmin = req.user.role === 'admin';
+    const isSelf = String(getAuthenticatedUserId(req)) === String(req.params.id);
+    if (!isAdmin && !isSelf) return res.status(403).json({ message: 'Acesso negado' });
+
+    if (!isAdmin && (req.body.email !== undefined || req.body.role !== undefined)) {
+      return res.status(400).json({ message: 'Campo inválido' });
+    }
+
     const user = await User.findById(req.params.id).select('+senha');
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
 
-    await assertEmailIsAvailable(req.body.email, user._id);
-    applyProfileFields(user, req.body, true);
+    if (isAdmin) await assertEmailIsAvailable(req.body.email, user._id);
+    applyProfileFields(user, req.body, isAdmin);
 
     const passwordToSet = req.body.password ?? req.body.senha;
     if (passwordToSet) user.senha = await bcrypt.hash(passwordToSet, 12);
 
     await user.save();
 
-    await AdminAudit.create({
-      user_id: req.user.sub,
-      action: 'admin.user.update',
-      payload: { targetUserId: req.params.id, fields: Object.keys(req.body).filter((field) => field !== 'password' && field !== 'senha') },
-      ip: req.ip || '',
-      ua: req.headers['user-agent'] || '',
-    });
+    if (isAdmin) {
+      await AdminAudit.create({
+        user_id: getAuthenticatedUserId(req),
+        action: 'admin.user.update',
+        payload: { targetUserId: req.params.id, fields: Object.keys(req.body).filter((field) => field !== 'password' && field !== 'senha') },
+        ip: req.ip || '',
+        ua: req.headers['user-agent'] || '',
+      });
+    }
 
     res.json(publicUser(user));
   } catch (e) { next(e); }

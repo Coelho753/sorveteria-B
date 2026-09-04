@@ -55,6 +55,8 @@ productSchema.pre('validate', function normalizeProduct(next) {
   next();
 });
 
+productSchema.index({ nome: 1, categoria: 1, tamanho: 1 }, { unique: true });
+
 module.exports = mongoose.model('Product', productSchema);
 module.exports.normalizeCategory = normalizeCategory;
 module.exports.PRODUCT_CATEGORIES = PRODUCT_CATEGORIES;

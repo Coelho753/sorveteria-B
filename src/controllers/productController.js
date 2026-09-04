@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { normalizeCategory } = require('../models/Product');
 
 const normalizeProductInput = (body, withDefaults = false) => ({
   nome: body.nome ?? body.name,
@@ -6,7 +7,7 @@ const normalizeProductInput = (body, withDefaults = false) => ({
   preco: body.preco ?? body.price,
   wholesalePrice: body.wholesalePrice ?? body.wholesale_price ?? body.wholesale_price_override,
   imagem: body.imagem ?? body.image ?? body.imageUrl ?? (withDefaults ? '' : undefined),
-  categoria: body.categoria ?? body.category,
+  categoria: normalizeCategory(body.categoria ?? body.category),
   tamanho: body.tamanho ?? body.size ?? (withDefaults ? '' : undefined),
   estoque: body.estoque ?? body.stock ?? (withDefaults ? 0 : undefined),
   ativo: body.ativo ?? body.active ?? (withDefaults ? true : undefined),
@@ -14,8 +15,15 @@ const normalizeProductInput = (body, withDefaults = false) => ({
 
 exports.create = async (req, res, next) => {
   try {
-    const product = await Product.create(normalizeProductInput(req.body, true));
-    res.status(201).json(product);
+    const productInput = normalizeProductInput(req.body, true);
+    const filter = { nome: productInput.nome, categoria: productInput.categoria, tamanho: productInput.tamanho };
+    const existingProduct = await Product.findOne(filter);
+    const product = await Product.findOneAndUpdate(
+      filter,
+      { $set: productInput },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    res.status(existingProduct ? 200 : 201).json(product);
   } catch (e) { next(e); }
 };
 

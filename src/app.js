@@ -12,13 +12,19 @@ const inputSanitizer = require('./middlewares/inputSanitizer');
 const app = express();
 
 app.use(helmet());
+const dynamicCorsAllowlist = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https:\/\/[^/]+\.lovable\.app$/,
+  /^https:\/\/[^/]+\.lovableproject\.com$/,
+];
+
 const isAllowedCorsOrigin = (origin) => {
   if (!origin) return true;
   try {
     const { protocol, hostname } = new URL(origin);
-    const isHttpLocalhost = protocol === 'http:' && (hostname === 'localhost' || hostname === '127.0.0.1');
-    const isTrustedHostedApp = protocol === 'https:' && (hostname.endsWith('.onrender.com') || hostname.endsWith('.lovable.app'));
-    return env.corsAllowlist.includes(origin) || isHttpLocalhost || isTrustedHostedApp;
+    const isTrustedRenderApp = protocol === 'https:' && hostname.endsWith('.onrender.com');
+    return env.corsAllowlist.includes(origin) || isTrustedRenderApp || dynamicCorsAllowlist.some((pattern) => pattern.test(origin));
   } catch {
     return false;
   }
@@ -31,7 +37,8 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-ayla-signature', 'x-webhook-secret'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-ayla-signature', 'x-webhook-secret'],
+  maxAge: 86400,
   optionsSuccessStatus: 204,
 }));
 app.use(express.json({ limit: '1mb', verify: (req, res, buf) => { req.rawBody = buf; } }));
@@ -47,7 +54,7 @@ app.use(xssClean());
 morgan.token('origin', (req) => req.headers.origin || '-');
 morgan.token('safe-url', (req) => (req.originalUrl || req.url || '').split('?')[0]);
 app.use(morgan(':method :safe-url :status :response-time ms origin=:origin'));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300 }));
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -58,6 +65,7 @@ const mountRoutes = (basePath = '') => {
   app.use(`${basePath}/products`, require('./routes/productRoutes'));
   app.use(`${basePath}/orders`, require('./routes/orderRoutes'));
   app.use(`${basePath}/cart`, require('./routes/cartRoutes'));
+  app.use(`${basePath}/carousels`, require('./routes/carouselRoutes'));
   app.use(`${basePath}/finance`, require('./routes/financeRoutes'));
   app.use(`${basePath}/wholesale`, require('./routes/wholesaleRoutes'));
   app.use(`${basePath}/config`, require('./routes/configRoutes'));

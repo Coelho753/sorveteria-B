@@ -36,9 +36,20 @@ const commonOrderValidators = [
   body('valorTotal').optional().isFloat({ min: 0 }),
   body('address').optional().isObject(),
   body('endereco').optional().isObject(),
+  body('customerName').optional().isString().trim(),
+  body('customerPhone').optional().isString().trim(),
+  body('phone').optional().isString().trim(),
+  body('telefone').optional().isString().trim(),
+  body('createdAt').optional().isISO8601(),
+  body('data').optional().isISO8601(),
+  body('notes').optional().isString().trim(),
 ];
 
-exports.createOrderValidator = commonOrderValidators;
+exports.createOrderValidator = [
+  ...commonOrderValidators,
+  body('source').optional().isIn(['app', 'external']),
+  body('status').optional().isIn(validStatuses),
+];
 
 exports.createWhatsappOrderValidator = [
   ...commonOrderValidators,
@@ -59,8 +70,13 @@ exports.updateOrderStatusValidator = [
   body('status').optional().isIn(validStatuses),
   body('total').optional().isFloat({ min: 0 }),
   body('valorTotal').optional().isFloat({ min: 0 }),
+  body('notes').optional().isString().trim(),
 ];
 
 exports.deleteOrderValidator = [
+  param('id').isMongoId(),
+];
+
+exports.getOrderValidator = [
   param('id').isMongoId(),
 ];

@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const env = require('../config/env');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const { publicUser } = require('../services/authTokenService');
@@ -177,5 +178,25 @@ exports.patchRole = async (req, res, next) => {
     });
 
     res.json(publicUser(user));
+  } catch (e) { next(e); }
+};
+
+exports.bootstrapRole = async (req, res, next) => {
+  try {
+    const configuredSecret = env.adminBootstrapSecret;
+    const providedSecret = req.headers['x-bootstrap-secret'];
+    if (!configuredSecret || !providedSecret || providedSecret !== configuredSecret) {
+      // 404 em vez de 401/403 para não revelar que a rota existe sem o segredo certo
+      return res.status(404).json({ message: 'Rota não encontrada' });
+    }
+
+    const email = (req.body.email || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ message: 'Informe email' });
+
+    const role = req.body.role === 'user' ? 'user' : 'admin';
+    const user = await User.findOneAndUpdate({ email }, { $set: { role } }, { new: true });
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado' });
+
+    res.json({ email: user.email, role: user.role });
   } catch (e) { next(e); }
 };

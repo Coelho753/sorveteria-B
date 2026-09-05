@@ -41,6 +41,7 @@ const env = {
   storeHours: readEnv(['STORE_HOURS', 'PUBLIC_HOURS'], ''),
   adminBootstrapEmail: readEnv(['ADMIN_BOOTSTRAP_EMAIL']),
   adminBootstrapPassword: readEnv(['ADMIN_BOOTSTRAP_PASSWORD']),
+  adminBootstrapSecret: readEnv(['ADMIN_BOOTSTRAP_SECRET']),
 };
 
 const requiredVariables = [
